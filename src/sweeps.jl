@@ -7,7 +7,7 @@ Forward or backward frequency sweep with constant excitation amplitude for LJ-mo
 function freq_sweep(F::Float64, Ω::Array{Float64}, exp::AFM_LJ_experiment, Δt::Float64)
     N = length(Ω)
     ϕ = 0.
-    T_sim = 4000
+    T_sim = 6000
     tspan = (0, T_sim)
     T_period = 2π/Δt
     p = zeros(Float64, 10)
@@ -52,7 +52,6 @@ function freq_sweep(F::Float64, Ω::Array{Float64}, exp::AFM_DMT_experiment, Δt
         # amplitude detection algorithm (fft not necessary)
         timeslot_to_detect_ampl = ceil(Int, 2*T_period)
         min = abs.(minimum(sol[1, end-timeslot_to_detect_ampl:end]))
-        print(ϕ)
         max = abs.(maximum(sol[1, end-timeslot_to_detect_ampl:end]))
         ampl_container[idx] = 1/2 * (min + max)
         # phase conservation 
@@ -70,7 +69,7 @@ same for eDMT models
 function freq_sweep(F::Float64, Ω::Array{Float64}, exp::AFM_eDMT_experiment, Δt::Float64)
     N = length(Ω)
     ϕ = 0.
-    T_sim = 4000
+    T_sim = 6000
     tspan = (0, T_sim)
     T_period = 2π/Δt
     p = zeros(Float64, 10)
@@ -101,7 +100,7 @@ same for vDMT models
 function freq_sweep(F::Float64, Ω::Array{Float64}, exp::AFM_vDMT_experiment, Δt::Float64)
     N = length(Ω)
     ϕ = 0.
-    T_sim = 4000
+    T_sim = 6000
     tspan = (0, T_sim)
     T_period = 2π/Δt
     p = zeros(Float64, 10)

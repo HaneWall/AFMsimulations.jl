@@ -12,7 +12,7 @@ probe = Sample(2.e-19, 1.e9, 0.3)
 AFM = AFM_DMT_experiment(probe, canti, 0.3e-9, 8.5e-9)
 
 
-force = 0.17e-9 # excitation force in Newton 
+force = 2.7e-9 # excitation force in Newton 
 Δt = 0.005  # timestep Δτ in integration scheme, 2π/Δt steps per period (we use dimensionless time)
 Ω = 1.003
 

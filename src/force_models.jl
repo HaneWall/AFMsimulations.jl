@@ -19,9 +19,9 @@ function f_DMT!(dx, x, p, t)
     dx[1] = x[2]
     dx[2] = -1/Q * x[2] - x[1] + Γ*sin(Ω*t + ϕ)
     if x[1] < d - a_0
-        dx[2] += -H*R/(6*k_c * (d - x[1])^2)
+        dx[2] += H*R/(6*k_c * (d - x[1])^2)
     else
-        dx[2] += -H*R/(6 * a_0^2 * k_c) + 4/3*E*sqrt(R) * 1/(k_c) * (x[1] - a_0)^(3/2) 
+        dx[2] += H*R/(6 * a_0^2 * k_c) - 4/3*E*sqrt(R) * 1/(k_c) * (x[1] - (d - a_0))^(3/2) 
     end
 end 
 
@@ -34,9 +34,9 @@ function f_eDMT!(dx, x, p, t)
     dx[1] = x[2]
     dx[2] = -1/Q * x[2] - x[1] + Γ*sin(Ω*t + ϕ) + ω_0 * γ_0*exp((x[1] - d)/x_γ)*x[2]/k_c
     if x[1] < d - a_0
-        dx[2] += -H*R/(6*k_c * (d - x[1])^2)
+        dx[2] += H*R/(6*k_c * (d - x[1])^2)
     else
-        dx[2] += -H*R/(6 * a_0^2 * k_c) + 4/3*E*sqrt(R) * 1/(k_c) * (x[1] - a_0)^(3/2) 
+        dx[2] += H*R/(6 * a_0^2 * k_c) - 4/3*E*sqrt(R) * 1/(k_c) * (x[1] - (d - a_0))^(3/2) 
     end
 end 
 
@@ -49,8 +49,8 @@ function f_vDMT!(dx, x, p, t)
     dx[1] = x[2]
     dx[2] = -1/Q * x[2] - x[1] + Γ*sin(Ω*t + ϕ) 
     if x[1] < d - a_0
-        dx[2] += -H*R/(6*k_c * (d - x[1])^2)
+        dx[2] += H*R/(6*k_c * (d - x[1])^2)
     else
-        dx[2] += -H*R/(6 * a_0^2 * k_c) + 4/3*E*sqrt(R) * 1/(k_c) * (x[1] - a_0)^(3/2) + η/k_c * ω_0 * sqrt(R*(x[1] - a_0))*x[2]
+        dx[2] += H*R/(6 * a_0^2 * k_c) - 4/3*E*sqrt(R) * 1/(k_c) * (x[1] - (d - a_0))^(3/2) + η/k_c * ω_0 * sqrt(R*(x[1] - a_0))*x[2]
     end
 end 
