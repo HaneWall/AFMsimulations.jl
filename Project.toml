@@ -1,0 +1,13 @@
+name = "AFMsimulations"
+uuid = "5cfa06bf-2d9d-4196-b117-af8e322e50b7"
+authors = ["Hannes Wallner"]
+version = "0.1.0"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
