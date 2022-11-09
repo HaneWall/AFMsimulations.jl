@@ -23,3 +23,7 @@ function force_distance(x::Float64, exp::AFM_DMT_experiment)
         return -H*R/(6 * a_0^2) + 4/3*E*sqrt(R)* (x - (d - a_0))^(3/2) 
     end
 end
+
+"""
+implement lock in fast fourier trasnform --> get phase and amplitude 
+"""

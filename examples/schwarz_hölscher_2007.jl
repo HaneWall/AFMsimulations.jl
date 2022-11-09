@@ -46,7 +46,7 @@ ampl_bwd = freq_sweep(force, reverse(Ω_fwd), AFM, Δt)
 
 # figure to represent the forward and backward sweep 
 fig = Figure(resolution=(800, 400), fontsize=24)
-ax = Axis(fig[1, 1], ylabel=L"A", xlabel=L"ω_{Drive}/ω_0")
+ax = Axis(fig[1, 1], ylabel=L"A", xlabel=L"f[Hz]")
 
 scatter!(ax, Ω_fwd .* 300000, ampl_fwd, marker=:circle, markersize=12, strokecolor=:black, strokewidth=1, color=(:black, 0.), label="Forward")
 scatter!(ax, reverse(Ω_fwd) .*300000 , ampl_bwd, marker=:circle, markersize=12, strokecolor=:blue, strokewidth=1, color=(:black, 0.), label="Backward")

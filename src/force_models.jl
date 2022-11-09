@@ -1,14 +1,23 @@
 """
-Lennard-Jones model, smooth interaction potential
+Lennard-Jones model, smooth interaction potential.
 """
 function f_LJ!(dx, x, p, t)
-    σ, Q, Ω, Γ, d, k_c, ϕ = p
+    σ, V_0, Q, Ω, Γ, d, k_c, ϕ = p
     dx[1] = x[2]
-    dx[2] = -1/Q * x[2] - x[1] * Γ*sin(Ω*t + ϕ) + 24*V_0/k_c * σ^6 / (x[1] - d)^7 * (2 * σ^6/(x[1] - d)^6 - 1)
+    dx[2] = -1/Q * x[2] - x[1] + Γ*sin(Ω*t + ϕ) + 24*V_0/k_c * σ^6 / (x[1] - d)^7 * (2 * σ^6/(x[1] - d)^6 - 1)
 end
 
 
 ###TODO: add Lennard-Jones potential with Ingos damping term x^{-3}
+"""
+Lennard-Jones model, smooth interaction, with damping.
+"""
+function f_vLJ!(dx, x, p, t)
+    σ, V_0, γ, ω_0, Q, Ω, Γ, d, k_c, ϕ = p 
+    dx[1] = x[2]
+    dx[2] = -1/Q * x[2] - x[1] + Γ*sin(Ω*t + ϕ) + 24*V_0/k_c * σ^6 /(x[1] - d)^7 * (2 * σ^6/(x[1] - d)^6 - 1) - x[2] * ω_0*γ/(d - x[1])^3
+end
+
 
 
 """
