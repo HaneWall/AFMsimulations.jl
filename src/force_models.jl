@@ -18,7 +18,7 @@ function f_vLJ!(dx, x, p, t)
     # define some helping variables (different coordinate system)
     h_x = (x[1] - d)^2 + (δx)^2
     dx[1] = x[2]
-    dx[2] = -1/Q * x[2] - x[1] + Γ*sin(Ω*t + ϕ) - 12*V_0/(k_c * sqrt(h_x)) * ((σ^2 / h_x)^6 - (σ^2 / h_x)^3)  + x[2] * ω_0*γ/(d-x[1])^3
+    dx[2] = -1/Q * x[2] - x[1] + Γ*sin(Ω*t + ϕ) - 12*V_0/(k_c * sqrt(h_x)) * ((σ^2 / h_x)^6 - (σ^2 / h_x)^3)  - x[2] * ω_0 * γ/(d - x[1])^3
 end
 
 
