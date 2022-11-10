@@ -43,14 +43,14 @@ struct AFM_vLJ_experiment
     sample::Sample
     tip::Cantilever
     σ::Float64
+    δx::Float64
     V_0::Float64
     γ::Float64
     d::Float64
-    function AFM_vLJ_experiment(sam::Sample, tip::Cantilever, σ::Float64, V_0::Float64, γ::Float64, d::Float64)
-        new(sam, tip, σ, V_0, γ, d) 
+    function AFM_vLJ_experiment(sam::Sample, tip::Cantilever, σ::Float64, δx::Float64, V_0::Float64, γ::Float64, d::Float64)
+        new(sam, tip, σ, δx, V_0, γ, d)
     end
 end
-
 
 
 """

@@ -46,7 +46,7 @@ function freq_sweep(F::Float64, Ω::Array{Float64}, exp::AFM_vLJ_experiment, Δt
     ampl_container = zeros(Float64, N)
     Γ = F/(exp.tip.k)
     @inbounds for idx in ProgressBar(1:N)
-        p = [exp.σ, exp.V_0, exp.γ, exp.tip.ω_0, exp.tip.Q, Ω[idx], Γ, exp.sample.H, exp.tip.R, exp.eff_young, exp.a_0, exp.d, exp.tip.k, ϕ]
+        p = [exp.σ, exp.δx, exp.V_0, exp.γ, 2π*exp.tip.f_0, exp.tip.Q, Ω[idx], Γ, exp.d, exp.tip.k, ϕ]
         prob = ODEProblem(f_vLJ!, u_0, tspan, p)
         sol = solve(prob, AutoTsit5(Rosenbrock23()), dt=Δt, adaptive=false) 
         # amplitude detection algorithm (fft not necessary)

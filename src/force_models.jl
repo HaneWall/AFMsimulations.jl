@@ -8,14 +8,17 @@ function f_LJ!(dx, x, p, t)
 end
 
 
-###TODO: add Lennard-Jones potential with Ingos damping term x^{-3}
 """
-Lennard-Jones model, smooth interaction, with damping.
+Lennard-Jones model, smooth interaction, soft sphere model to avoid
+singularities at the surface of the sample. Introduces damping via (x - d)^{-3}
+term. See I. Barke implementation. 
 """
 function f_vLJ!(dx, x, p, t)
-    σ, V_0, γ, ω_0, Q, Ω, Γ, d, k_c, ϕ = p 
+    σ, δx, V_0, γ, ω_0, Q, Ω, Γ, d, k_c, ϕ = p
+    # define some helping variables (different coordinate system)
+    h_x = (x[1] - d)^2 + (δx)^2
     dx[1] = x[2]
-    dx[2] = -1/Q * x[2] - x[1] + Γ*sin(Ω*t + ϕ) + 24*V_0/k_c * σ^6 /(x[1] - d)^7 * (2 * σ^6/(x[1] - d)^6 - 1) - x[2] * ω_0*γ/(d - x[1])^3
+    dx[2] = -1/Q * x[2] - x[1] + Γ*sin(Ω*t + ϕ) - 12*V_0/(k_c * sqrt(h_x)) * ((σ^2 / h_x)^6 - (σ^2 / h_x)^3)  + x[2] * ω_0*γ/(d-x[1])^3
 end
 
 
@@ -41,7 +44,7 @@ DMT model with additional exponential decaying damping term, inspired by Havilan
 function f_eDMT!(dx, x, p, t)
     γ_0, x_γ, ω_0, Q, Ω, Γ, H, R, E, a_0, d, k_c, ϕ = p
     dx[1] = x[2]
-    dx[2] = -1/Q * x[2] - x[1] + Γ*sin(Ω*t + ϕ) + ω_0 * γ_0*exp((x[1] - d)/x_γ)*x[2]/k_c
+    dx[2] = -1/Q * x[2] - x[1] + Γ*sin(Ω*t + ϕ) - ω_0 * γ_0*exp((x[1] - d)/x_γ)*x[2]/k_c
     if x[1] < d - a_0
         dx[2] += H*R/(6*k_c * (d - x[1])^2)
     else
