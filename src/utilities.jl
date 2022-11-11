@@ -1,3 +1,4 @@
+using Statistics, DifferentialEquations
 
 """ 
 returns effective Young's module of two interacting materials
@@ -36,6 +37,34 @@ function force_distance(x::Float64, exp::AFM_vLJ_experiment)
     f = 12*V_0/sqrt(h_x) *( (σ^2/ h_x)^6 - (σ^2/ h_x)^3)
     return f
 end
+
+"""
+Poincare map Φ: x(t) --> x(t + T), with T being the period of the forcing term.
+For us T = 2π * Ω. Input is a ODE-Problem, initial Vector x, problem specific
+parameters and Δt.
+"""
+function Φ_poincare(prob::ODEProblem, x::Array{Float64}, p::Array{Float64}, Δt::Float64)
+    prob_new = remake(prob, u0=x, p=p)
+    sol_new = solve(prob_new, AutoTsit5(Rosenbrock23()), adaptive=false, dt=Δt) 
+    return sol_new[end]
+end
+
+
+
+
+"""
+Steady state checker, stop simulation if std of amplitude for n periods stays
+below some tolerance: tol  
+"""
+function steady_state_check(ampl::Array{Float64}, tol::Float64)
+    σ = std(ampl)
+    if σ < tol
+        return true
+    else 
+        return false
+    end
+end
+
 
 """
 Implements digital lock in amplifier. Provide a reference signal (a local

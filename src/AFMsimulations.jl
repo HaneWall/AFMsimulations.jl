@@ -7,9 +7,9 @@ module AFMsimulations
     export f_LJ!, f_vLJ!, f_DMT!, f_eDMT!, f_vDMT!
 
     include("utilities.jl")
-    export eff_young_module, force_distance
+    export eff_young_module, force_distance, Φ_poincare
 
     include("sweeps.jl")
-    export freq_sweep
+    export freq_sweep, freq_sweep_Φ
 
 end
