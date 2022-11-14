@@ -1,4 +1,5 @@
-using Statistics, DifferentialEquations
+using Statistics, DifferentialEquations, CairoMakie
+CairoMakie.activate!(type="svg")
 
 """ 
 returns effective Young's module of two interacting materials
@@ -10,7 +11,7 @@ end
 
 
 """
-returns force-distance relation fior DMT experiments
+returns force-distance relation for DMT experiments
 """
 function force_distance(x::Float64, exp::AFM_DMT_experiment)
     R = exp.tip.R
@@ -74,3 +75,20 @@ Input:: sig:Array of interest, ω_ref:reference frequency
 """
 function lock_in_amplifier(sig::Array{Float64}, ω_ref::Float64)
 end 
+
+
+"""
+Creates phase space representation for the damped Lennard-Jones model.
+"""
+function phase_space(exp::AFM_vLJ_experiment)
+    x_min = -exp.d
+    x_max = exp.d
+    ∂x_min = -10. *exp.d
+    ∂x_max = 10. *exp.d 
+    h_x(x) = (x - exp.d)^2 + (exp.δx)^2
+    help_function(x, y) = Point2f(y, -1/exp.tip.Q * y - x - 12*exp.V_0/(exp.tip.k * sqrt(h_x(x))) * ((exp.σ^2 / h_x(x))^6 - (exp.σ^2 / h_x(x))^3)  - y * exp.tip.f_0*2π * exp.γ/(exp.d - x)^3)
+    fig = Figure(resolution=(500, 500), title="Phase Space for damped Lennard-Jones model")
+    ax = Axis(fig[1, 1], xlabel=L"x", ylabel=L"∂x")
+    streamplot!(ax, help_function, x_min .. x_max, ∂x_min .. ∂x_max, colormap = [:black, :black], gridsize = (10, 10), arrow_size = 10)
+    fig
+end

@@ -70,7 +70,7 @@ Forward or backward frequency sweep with constant excitation amplitude for DMT-m
 function freq_sweep(F::Float64, Ω::Array{Float64}, exp::AFM_DMT_experiment, Δt::Float64)
     N = length(Ω)
     ϕ = 0.
-    T_sim = 4000
+    T_sim = 5000
     tspan = (0, T_sim)
     p = zeros(Float64, 10)
     u_0 = [0.; 0.]
