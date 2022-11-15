@@ -4,7 +4,8 @@
 
 *.pdf 
 *.svg
-*.png 
+*.png
+*.csv 
 
 *.vscode
 /Manifest.toml
