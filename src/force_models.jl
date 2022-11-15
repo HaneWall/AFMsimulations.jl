@@ -37,6 +37,21 @@ function f_DMT!(dx, x, p, t)
     end
 end 
 
+"""
+Autonomous DMT model. Respects elastic properties via Hertzian contact model. 
+"""
+function f_DMT_auto!(dx, x, p, t)
+    Q, Ω, Γ, H, R, E, a_0, d, k_c, ϕ = p
+    dx[1] = x[2]
+    dx[2] = -1/Q * x[2] - x[1] + Γ*sin(Ω*x[3] + ϕ)
+    dx[3] = (1.)%2π 
+    if x[1] < d - a_0
+        dx[2] += H*R/(6*k_c * (d - x[1])^2)
+    else
+        dx[2] += H*R/(6 * a_0^2 * k_c) - 4/3*E*sqrt(R) * 1/(k_c) * (x[1] - (d - a_0))^(3/2) 
+    end
+end 
+
 
 """
 DMT model with additional exponential decaying damping term, inspired by Haviland.

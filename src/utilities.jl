@@ -1,4 +1,4 @@
-using Statistics, DifferentialEquations, CairoMakie
+using Statistics, DifferentialEquations, CairoMakie, LinearAlgebra
 CairoMakie.activate!(type="svg")
 
 """ 
@@ -50,8 +50,23 @@ function Φ_poincare(prob::ODEProblem, x::Array{Float64}, p::Array{Float64}, Δt
     return sol_new[end]
 end
 
-
-
+"""
+Poincare map Φ: x(t) --> x(t + T), with T being the period of the forcing term.
+For us T = 2π * Ω. Input is a ODE-Problem, initial Vector x, problem specific
+parameters and Δt. We found a periodic orbit iff |Φ(x) - x|_2 <= ϵ with ϵ being
+the absolute tolerance. This function can tzhan be used to determine a callback
+function in an ODEProblem. This way we Should be able to get way more efficient
+algorithms. 
+"""
+function Φ_poincare_fixpoint(prob::ODEProblem, x::Array{Float64}, p::Array{Float64}, Δt::Float64, abstol::Float64)
+    prob_new = remake(prob, u0=x, p=p)
+    sol_new = solve(prob_new, AutoTsit5(Rosenbrock23()), adaptive=false, dt=Δt)  
+    if norm(sol_new[end] .- x).< abstol
+        return true
+    else 
+        return false
+    end
+end
 
 """
 Steady state checker, stop simulation if std of amplitude for n periods stays
