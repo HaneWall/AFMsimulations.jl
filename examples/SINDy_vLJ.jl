@@ -1,9 +1,10 @@
 using AFMsimulations
-using CairoMakie
+using DifferentialEquations
 using DataDrivenDiffEq 
 using ModelingToolkit
 using LinearAlgebra
-CairoMakie.activate!(type="svg")
+using Plots
+#CairoMakie.activate!(type="svg")
 # Trying to reproduce Ingo Sweep, powerpoint page 22 (LennardJones.pptx - Unibox)
 
 d = 100.e-9             # distance equilibrium cantilever to surface
@@ -40,41 +41,39 @@ AFM = AFM_vLJ_experiment(barke_probe, barke_canti, σ, δx, V_0, γ, d)
 p = [AFM.σ, AFM.δx, AFM.V_0, AFM.γ, 2π*AFM.tip.f_0, AFM.tip.Q, Ω, Γ, AFM.d, AFM.tip.k, ϕ]
 
 u0 = [0.; 0.]
-tspan = (0.0, 5000.0)
+tspan = (0.0, 1100.0)
 prob = ODEProblem(f_vLJ!, u0, tspan, p)
 sol = solve(prob, AutoTsit5(Rosenbrock23()), dt = 0.005, adaptive=false)
 
-fig = Figure(resolution=(600, 600))
-ax = Axis(fig[1, 1], xlabel=L"x", ylabel=L"∂x")
-lines!(ax, sol[1, :], sol[2, :])
-fig 
 
+X = sol[:,:] # + 0.2 .* randn(size(sol));
+ts = sol.t;
 
-## SINDy reconstruction without control 
-# Create Datamatrix X
-X = sol[:,:] #+ 0.2 .* randn(size(sol)) 
-ts = sol.t
+prob = ContinuousDataDrivenProblem(X, ts, GaussianKernel(), U = (u,p,t)->[Γ .* sin(t)], p = ones(2))
 
-
-#### Start the automatic discovery
-ddprob = ContinuousDataDrivenProblem(sol)
 @variables u[1:2] c[1:1]
 @parameters w[1:2]
 u = collect(u)
 c = collect(c)
 w = collect(w)
 
-h = Num[sin.(w[1].*u[1]);cos.(w[2].*u[1]); polynomial_basis(u, 5); c]
-
-
+h = Num[(u[1] - w[1]).^(-13); (u[1] - w[2]).^(-7); u[2]/(u[1])^3; polynomial_basis(u, 2); c]
 
 basis = Basis(h, u, parameters = w, controls = c);
+println(basis) # hide
+
+sampler = DataSampler(Batcher(n = 5, shuffle = true, repeated = true))
+λs = exp10.(-10:0.1:-1)
+opt = STLSQ(λs)
+res = solve(prob, basis, opt, progress = false, sampler = sampler, denoise = false, normalize = false, maxiter = 5000)
+println(res) #hide
+
+system = result(res)
+params = parameters(res)
+println(system) #hide
+println(params) #hide
 
 
-
-@variables t x(t) y(t) 
-u = [x;y;z]
-basis = Basis(polynomial_basis(u, 5), u, iv = t)
-opt = STLSQ(exp10.(-5:0.1:-1))
-ddsol = solve(ddprob, basis, opt, normalize = true)
-print(ddsol, Val{true})
+Plots.plot(
+    Plots.plot(prob), Plots.plot(res), layout = (1,2)
+)
