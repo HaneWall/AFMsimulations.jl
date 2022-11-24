@@ -1,5 +1,6 @@
 using DifferentialEquations
 using ProgressBars
+using StaticArrays
 using NLsolve
 
 """
@@ -62,6 +63,37 @@ function freq_sweep(F::Float64, Ω::Array{Float64}, exp::AFM_vLJ_experiment, Δt
     end
     return ampl_container
 end
+
+
+
+function freq_sweep_stat(F::Float64, Ω::Array{Float64}, exp::AFM_vLJ_experiment, Δt::Float64)
+    N = length(Ω)
+    ϕ = 0.
+    T_sim = 6000
+    tspan = (0, T_sim)
+    T_period = 2π/Δt
+    p = zeros(Float64, 10)
+    u_0 = SA[0.; 0.]
+    ampl_container = zeros(Float64, N)
+    Γ = F/(exp.tip.k)
+    @inbounds for idx in ProgressBar(1:N)
+        p = [exp.σ, exp.δx, exp.V_0, exp.γ, 2π*exp.tip.f_0, exp.tip.Q, Ω[idx], Γ, exp.d, exp.tip.k, ϕ]
+        prob = ODEProblem(f_vLJ, u_0, tspan, p)
+        integrator = init(prob, AutoTsit5(Rosenbrock23()), dt=Δt, adaptive=false) 
+        solve!(integrator)
+        # amplitude detection algorithm (fft not necessary)
+        timeslot_to_detect_ampl = ceil(Int, 2*T_period)
+        min = abs.(minimum(integrator.sol[1, end-timeslot_to_detect_ampl:end]))
+        max = abs.(maximum(integrator.sol[1, end-timeslot_to_detect_ampl:end]))
+        ampl_container[idx] = 1/2 * (min + max)
+        # phase conservation 
+        ϕ = (ϕ + T_sim*Ω[idx])%2π
+        # new u_0 is last entry of previous simulation 
+        u_0 = SA[integrator.sol[1, end]; integrator.sol[2, end]]
+    end
+    return ampl_container
+end
+
 
 """
 Forward / backward frequency sweep with constant excitation amplitude for DMT-model.

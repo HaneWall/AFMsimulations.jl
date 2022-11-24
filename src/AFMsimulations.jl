@@ -10,6 +10,6 @@ module AFMsimulations
     export eff_young_module, force_distance, Φ_poincare
 
     include("sweeps.jl")
-    export freq_sweep, freq_sweep_auto, freq_sweep_Φ, phase_space, ampl_sweep
+    export freq_sweep, freq_sweep_stat, freq_sweep_auto, freq_sweep_Φ, phase_space, ampl_sweep
 
 end

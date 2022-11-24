@@ -1,4 +1,4 @@
-using DifferentialEquations, AFMsimulations, BenchmarkTools, StaticArrays
+using DifferentialEquations, AFMsimulations, BenchmarkTools, StaticArrays, LinearAlgebra
 
 """
 In order to get more convenient and faster computations it would be quite nice,
@@ -44,9 +44,31 @@ stat_prob = ODEProblem(f_vLJ_static, u0, tspan, p)
 
 
 ### define integrator setup 
-@btime integrator = init(stat_prob, AutoTsit5(Rosenbrock23()), dt = 0.005, adaptive=false)
+@profview integrator = init(stat_prob, AutoTsit5(Rosenbrock23()), dt = 0.005, adaptive=false)
 @benchmark solve!(integrator)
 
 """
 INSANE speedup, we are in in NANOSECONDS-regime now. 
 """
+
+integrator = init(stat_prob, AutoTsit5(Rosenbrock23()), dt = (2π)/1300, adaptive=false)
+solve!(integrator)
+
+
+
+"""
+
+"""
+
+@benchmark begin
+t_min = 3000
+P = [SA[0., 0.], SA[0., 0.]]
+ϵ
+while integrator.t < 7000.
+    step!(integrator)
+    if integrator.t > t_min && One_Period_over
+        push!(P, integrator.u)
+        popfirst!(P)
+    end
+end
+end
