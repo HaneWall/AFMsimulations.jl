@@ -4,7 +4,7 @@ module AFMsimulations
     export Cantilever, Sample, AFM_LJ_experiment, AFM_vLJ_experiment, AFM_DMT_experiment, AFM_eDMT_experiment, AFM_vDMT_experiment
 
     include("force_models.jl")
-    export f_LJ!, f_vLJ!, f_DMT!, f_DMT_auto!, f_eDMT!, f_vDMT!
+    export f_LJ!, f_vLJ!, f_vLJ, f_DMT!, f_DMT_auto!, f_eDMT!, f_vDMT!
 
     include("utilities.jl")
     export eff_young_module, force_distance, Φ_poincare

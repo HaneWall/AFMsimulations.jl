@@ -1,3 +1,5 @@
+using StaticArrays
+
 """
 Lennard-Jones model, smooth interaction potential.
 """
@@ -21,6 +23,17 @@ function f_vLJ!(dx, x, p, t)
     dx[2] = -1/Q * x[2] - x[1] + Γ*sin(Ω*t + ϕ) - 12*V_0/(k_c * sqrt(h_x)) * ((σ^2 / h_x)^6 - (σ^2 / h_x)^3)  - x[2] * ω_0 * γ/(d - x[1])^3
 end
 
+"""
+Using StaticArrays for faster computations
+"""
+function f_vLJ(u, p, t)
+    σ, δx, V_0, γ, ω_0, Q, Ω, Γ, d, k_c, ϕ = p
+    # define helping variable for coordiantion trasnsformation 
+    h_x = (u[1] - d)^2 + (δx)^2
+    dx = u[2]
+    dy = -1/Q * u[2] - u[1] + Γ*sin(Ω*t + ϕ) - 12*V_0/(k_c * sqrt(h_x)) * ((σ^2 / h_x)^6 - (σ^2 / h_x)^3)  - u[2] * ω_0 * γ/(d - u[1])^3
+    SA[dx, dy]
+end
 
 
 """
