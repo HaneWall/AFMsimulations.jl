@@ -84,16 +84,17 @@ end
 Noisy sine data for test
 """
 
-x_set = collect(0.:0.01:4π)
+δx = 0.1
+x_set = collect(0.:δx:4π)
 y_set = sin.(x_set)
 noise = 0.1*randn(length(x_set))
-window_size = 151
+window_size = 31
 y_noised = y_set .+ noise
-y_filtered = savitzky_golay_filter(y_noised, window_size, 2; deriv_order=0, boundary_mode = :interpolation)
+y_filtered = savitzky_golay_filter(y_noised, window_size, 3; deriv_order=0, boundary_mode = :interpolation)
 fig = Figure(resolution=(800, 800))
 ax = Axis(fig[1, 1])
 lines!(ax, x_set, y_noised, color=:grey)
-lines!(ax, x_set, y_filtered)
-lines!(ax, x_set, y_set)
+lines!(ax, x_set, y_filtered, linewidth=2)
+lines!(ax, x_set, y_set, linewidth=2)
+lines!(ax, x_set, 1/δx * savitzky_golay_filter(y_noised, window_size, 3; deriv_order=1, boundary_mode = :interpolation))
 fig
-
