@@ -48,8 +48,15 @@ function sinusoidal_bases(k, a, b)
     return terms 
 end
 
-function step_secant_reference(old::AbstractVector, μ::Float64)
-    return 0 
+function step_secant_reference(ξ, μ::Float64)
+    """
+    AbstractMatrix is of the form 
+    ξ = [ [p_{n-1} x_{n-1}],  [p_{n}, x_{n}] ]
+    """
+    ξ_new = ξ[2] .+ μ.*(ξ[2] - ξ[1]) 
+    popfirst!(ξ)
+    push!(ξ, ξ_new)
+    return ξ
 end
 
 
