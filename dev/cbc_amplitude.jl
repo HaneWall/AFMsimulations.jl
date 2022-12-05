@@ -59,7 +59,6 @@ function step_secant_reference(ξ, μ::Float64)
     return ξ
 end
 
-
 function step_reference_trajectory(R::Float64, μ::Float64)
     R_new = R + μ
     return R_new
@@ -70,6 +69,38 @@ function fourier_decomposition(sig::AbstractVector; Ω_max::Int64 = 7)
     return coeff
 end
 
+"""
+check every 10 periods, if we can increase the continuation. Callback on current
+std_array --> if std_array[end] <= tol  
+"""
+
+
+function 
+
 function check_steady_state(fourier_coeffs_std::AbstractVector)
     return 0
 end
+
+
+"""
+PsuedoCode: 
+integrator = ODE.. 
+tst_period = Ω*π/Δt
+sol_period = [zeros(Float64, tst_period), zeros(Float64, tst_period)]
+for tst in timesteps: 
+    step!(integrator)
+    popfirst!(sol_period)
+    push!(sol_period, integrator.sol[end])
+    if tst % tst_period == 0
+        compute fourier coeffcients 
+        fourier_coeffs = fourier_decomposition()
+        push!(fourier_coeffs, f_coeff)
+        popfirst!(fourier_coeffs)
+        fourier_coeffs
+    elseif tst % 10*tst_period == 0
+
+        
+    end
+end
+
+"""
