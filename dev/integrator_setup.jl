@@ -63,7 +63,6 @@ solve!(integrator)
 @benchmark begin
 t_min = 3000
 P = [SA[0., 0.], SA[0., 0.]]
-ϵ
 while integrator.t < 7000.
     step!(integrator)
     if integrator.t > t_min && One_Period_over

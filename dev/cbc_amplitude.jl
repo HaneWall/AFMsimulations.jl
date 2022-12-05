@@ -1,4 +1,4 @@
-using LinearAlgebra, CairoMakie
+using LinearAlgebra, CairoMakie, DifferentialEquations, DiffEqCallbacks
 
 """
 Control based continuation for the amplitude. 
@@ -82,25 +82,57 @@ function check_steady_state(fourier_coeffs_std::AbstractVector)
 end
 
 
-"""
-PsuedoCode: 
-integrator = ODE.. 
-tst_period = Ω*π/Δt
+
+##PseudoCode for continuation in the amplitude: 
+ampl_init = 1.                  # initial amplitude of the input signal 
+N_H = 4                         # number of harmonic modes our basis spans, base = [1/2, sin(t), cos(t), .., sin(N_H*t), cos(N_H*t)] 
+# x̂_ref = [X̂_0,X̂_1s ,X̂_1c , ... , X̂_NH_s, X̂_NH_c]    # reference trajectory
+# x̂_nf_ref = [X̂_0, ... , X̂_NH_s, X̂_NH_c]  
+# initial reference trajectory 
+x̂_ref = zeros(Float64, 1+2*N_H)
+x̂_ref[1] = ampl_init
+
+u_0 = [0., 0.]                  # some initial condition 
+integrator = ODEInit..          # setup an integrator that we can interate over
+μ = 0.1                         # parameter for continuation for input amplitude 
+tst_period = Ω*2π/Δt
 sol_period = [zeros(Float64, tst_period), zeros(Float64, tst_period)]
+std_buffer = zeros(Float64, 5)  # stores first harmonic for 5 period
+ϵ_tol = 10e-10                  # Tolerance of standard deviation 
 for tst in timesteps: 
     step!(integrator)
     popfirst!(sol_period)
     push!(sol_period, integrator.sol[end])
+    # notice that we should use periodic saving Callbacks. (PeriodicCallback from DiffEqCallbacs)
     if tst % tst_period == 0
-        compute fourier coeffcients 
-        fourier_coeffs = fourier_decomposition()
+        base = sinusoidal_bases(freq_modes, (tst-tst_period)*Δt, tst*Δt)
+        f_coeffs = lsq_regression(collect(tst-tst_period:1:tst).*Δt, sol_period, base)
+        X_s, X_c = f_coeffs[2], f_coeffs[3]
+        ϕ = atan(X_c/X_s)
         push!(fourier_coeffs, f_coeff)
         popfirst!(fourier_coeffs)
-        fourier_coeffs
-    elseif tst % 10*tst_period == 0
-
-        
+    elseif tst % (10*tst_period) == 0
+        if check_steady_state(std_buffer)
+            #- terminate integration 
+            #- store current phase
+            step_secant_reference(ξ, μ)
+            break 
+        else 
+            continue 
+        end
     end
 end
 
-"""
+mutable struct Reference_trajectory
+    X̂ = zeros(Float64, Float64)
+
+end
+
+
+#computations that have to be done after each period
+period_callback = PeriodicCallback(period_computations, timesteps_period; initialize=period_init)
+period_compuations(integrator)
+
+
+
+cbs = CallbackSet(period_callback, ten_period_callback)
