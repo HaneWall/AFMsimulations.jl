@@ -47,10 +47,26 @@ hard threshhold. As mentioned in Stauffer we can use η=1/Q as a good starting p
 """
 returns still active candidate functions (to be exact their boolean index) after each regression
 """
+
+
 function active_set!(idx::BitArray, x::AbstractArray{T}, λ::T) where {T}
-@assert size(idx) == size(x)
-@inbounds foreach(eachindex(x)) do i
-    idx[i] = abs(x[i]) > sqrt(2 * λ)
+    @assert size(idx) == size(x)
+    @inbounds foreach(eachindex(x)) do i
+        idx[i] = abs(x[i]) > sqrt(2 * λ)
     end
     return
+end
+
+
+"""
+Looks up if the regression Problem is converged 
+"""
+function _is_converged(x::AbstractSparseRegressionCache, abstol, reltol)::Bool
+    @unpack X, X_prev, active_set = x
+    !(any(active_set)) && return true
+    Δ = norm(X .- X_prev)
+    Δ < abstol && return true
+    δ = Δ / norm(X)
+    δ < reltol && return true
+    return false
 end
