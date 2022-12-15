@@ -23,12 +23,13 @@ f_0 = 300000.
 R = 10.e-9
 Ω = 1. 
 Γ = force / k 
+ϕ = 0.
 
 
 
 
 canti = Cantilever(R, Q, k, E_t, ν_t, f_0 * 2π)
-probe = AFMSimulations.Sample(H, E_s, ν_s)
+probe = AFMsimulations.Sample(H, E_s, ν_s)
 AFM = AFM_DMT_experiment(probe, canti, a_0, d)
 
 E = eff_young_module(probe, canti)
@@ -77,26 +78,26 @@ lines!(ax_stab_ts_one, sol.t[end-1257:end], f_ts_one; color=sol.t[end-1257:end],
 fig
 
 
-using DataDrivenDiffEq 
-using ModelingToolkit
+# using DataDrivenDiffEq 
+# using ModelingToolkit
 
-@parameters t
-@variables u[1:2] c[1:1]
+# @parameters t
+# @variables u[1:2] c[1:1]
 
-polys = polynomial_basis(u, 2)
-push!(polys, sin.(u[1]))
-push!(polys, cos.(u[1]))
-push!(polys, sin.(u[1])^2)
-push!(polys, cos.(u[1])^2)
-push!(polys, sin.(u[1]) .* u[3:4]...)
-push!(polys, sin.(u[1]) .* u[3:4] .^ 2...)
-push!(polys, sin.(u[1]) .* cos.(u[1])...)
-push!(polys, sin.(u[1]) .* cos.(u[1]) .* u[3:4]...)
-push!(polys, sin.(u[1]) .* cos.(u[1]) .* u[3:4] .^ 2...)
+# polys = polynomial_basis(u, 2)
+# push!(polys, sin.(u[1]))
+# push!(polys, cos.(u[1]))
+# push!(polys, sin.(u[1])^2)
+# push!(polys, cos.(u[1])^2)
+# push!(polys, sin.(u[1]) .* u[3:4]...)
+# push!(polys, sin.(u[1]) .* u[3:4] .^ 2...)
+# push!(polys, sin.(u[1]) .* cos.(u[1])...)
+# push!(polys, sin.(u[1]) .* cos.(u[1]) .* u[3:4]...)
+# push!(polys, sin.(u[1]) .* cos.(u[1]) .* u[3:4] .^ 2...)
 
-h = Num[ ;c]
+# h = Num[ ;c]
 
 
-t_span = (4993.715000085791, 5000.)
+# t_span = (4993.715000085791, 5000.)
 
-basis = Basis(implicits, u, implicits = du, controls = x, iv = t);
+# basis = Basis(implicits, u, implicits = du, controls = x, iv = t);

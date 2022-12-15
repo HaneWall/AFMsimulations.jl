@@ -1,16 +1,17 @@
 using DifferentialEquations, CairoMakie, StaticArrays, Statistics, LinearAlgebra
 
 
-"""
-Anna Pseudocode
-"""
+#=
+First we should sweep without any continuation to gain information 
+=#
+
 k_max = 20 
 ϕ̂_low = 0.3π
 ϕ̂_high = 0.6π
 ϕ̂_step = 0.1 
 ϕ̂ = collect(ϕ̂_low:ϕ̂_step:ϕ̂_high)
 K_p = 
-K_d = 
+K_d =  
 j = 0
 max_iter = 15
 
@@ -20,7 +21,11 @@ for ϕ_target in ϕ̂
     iter = 0
     while (norm(ϕ_exp - ϕ_target) > ϵ_ϕ || norm(ϕ̇_exp) > ϵ_ϕ̇) && iter < max_iter 
         # simulate transient time (10% of Q)
-        step!(integrator, number_of_step)
+        integrator = init(ode_prob, )
+        converged = false 
+        while !converged
+            step!(integrator)
+        end
         # get current ϕ_exp, ϕ̇_exp, A_exp via lsq-regression?
         # increase ω
         ω = ω + T_trans * (K_p*(ϕ_exp - ϕ_target) + K_d*(ϕ̇_exp))
@@ -41,7 +46,7 @@ function ampl_sweep_init_scheme(F::Array{Float64}, Ω::Float64, exp::AFM_vLJ_exp
         cb = PeriodicCallback()
         integrator = init(prob, AutoTsit5(Rosenbrock23()), dt = Δt, adaptive=false)
         converged = false
-        while integrator.t < tspan[1]
+        while !converged
             if converged
                 terminate!(integrator)
                 break 
