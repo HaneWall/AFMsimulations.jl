@@ -1,7 +1,8 @@
 using AFMsimulations
 using CairoMakie
-using DataDrivenDiffEq 
-using ModelingToolkit
+using DifferentialEquations
+#using DataDrivenDiffEq 
+#using ModelingToolkit
 using LinearAlgebra
 CairoMakie.activate!(type="svg")
 # Trying to reproduce Ingo Sweep, powerpoint page 22 (LennardJones.pptx - Unibox)
@@ -44,37 +45,67 @@ tspan = (0.0, 5000.0)
 prob = ODEProblem(f_vLJ!, u0, tspan, p)
 sol = solve(prob, AutoTsit5(Rosenbrock23()), dt = 0.005, adaptive=false)
 
-fig = Figure(resolution=(600, 600))
-ax = Axis(fig[1, 1], xlabel=L"x", ylabel=L"∂x")
-lines!(ax, sol[1, :], sol[2, :])
+function get_tip_sample_interaction_lj(u1, u2, p)
+    σ, δx, V_0, γ, ω_0, Q, Ω, Γ, d, k_c, ϕ = p
+    h_x = (u1 .- d).^2 .+ (δx).^2
+    f_ts = similar(u1)
+    @. f_ts = -12*V_0/(k_c * sqrt(h_x)) * ((σ^2 / h_x)^6 - (σ^2 / h_x)^3)  - u2 * ω_0 * γ/(d - u1)^3
+    return f_ts 
+end
+
+x_1 = sol[1, end-20_000:end]
+x_2 = sol[1, end-20_000:end]
+f_ts = get_tip_sample_interaction_lj(x_1, x_2, p)
+
+x_1_transient = sol[1, 1:100_000]
+x_2_transient = sol[1, 1:100_000]
+f_ts_transient = get_tip_sample_interaction_lj(x_1_transient, x_2_transient, p)
+
+fig = Figure(resolution = (800, 800))
+ax = Axis3(fig[1, 1])
+lines!(ax, sol[1, end-20000:end], sol[2, end-20000:end], sol.t[end-20000:end])
+axflat = Axis(fig[1, 2])
+lines!(axflat, sol.t[end-20000:end], f_ts)
+ax_2 = Axis3(fig[2, 1])
+lines!(ax_2, sol[1, 1:100_000], sol[2, 1:100_000], sol.t[1:100_000], linewidth=0.3)
+axflat_2 = Axis(fig[2, 2])
+lines!(axflat_2, sol.t[1:100_000], f_ts_transient)
 fig 
 
 
-## SINDy reconstruction without control 
-# Create Datamatrix X
-X = sol[:,:] #+ 0.2 .* randn(size(sol)) 
-ts = sol.t
+
+
+# fig = Figure(resolution=(600, 600))
+# ax = Axis(fig[1, 1], xlabel=L"x", ylabel=L"∂x")
+# lines!(ax, sol[1, :], sol[2, :])
+# fig 
+
+
+# ## SINDy reconstruction without control 
+# # Create Datamatrix X
+# X = sol[:,:] #+ 0.2 .* randn(size(sol)) 
+# ts = sol.t
 
 
 #### Start the automatic discovery
-ddprob = ContinuousDataDrivenProblem(sol)
-@variables u[1:2] c[1:1]
-@parameters w[1:2]
-u = collect(u)
-c = collect(c)
-w = collect(w)
+# ddprob = ContinuousDataDrivenProblem(sol)
+# @variables u[1:2] c[1:1]
+# @parameters w[1:2]
+# u = collect(u)
+# c = collect(c)
+# w = collect(w)
 
-h = Num[sin.(w[1].*u[1]);cos.(w[2].*u[1]); polynomial_basis(u, 5); c]
-
-
-
-basis = Basis(h, u, parameters = w, controls = c);
+# h = Num[sin.(w[1].*u[1]);cos.(w[2].*u[1]); polynomial_basis(u, 5); c]
 
 
 
-@variables t x(t) y(t) 
-u = [x;y;z]
-basis = Basis(polynomial_basis(u, 5), u, iv = t)
-opt = STLSQ(exp10.(-5:0.1:-1))
-ddsol = solve(ddprob, basis, opt, normalize = true)
-print(ddsol, Val{true})
+# basis = Basis(h, u, parameters = w, controls = c);
+
+
+
+# @variables t x(t) y(t) 
+# u = [x;y;z]
+# basis = Basis(polynomial_basis(u, 5), u, iv = t)
+# opt = STLSQ(exp10.(-5:0.1:-1))
+# ddsol = solve(ddprob, basis, opt, normalize = true)
+# print(ddsol, Val{true})
