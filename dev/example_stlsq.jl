@@ -2,6 +2,8 @@ using DataDrivenDiffEq
 using DataDrivenSparse
 using LinearAlgebra
 using OrdinaryDiffEq
+using CairoMakie
+CairoMakie.activate!(type="svg")
 using AFMsimulations
 
 function pendulum(u, p, t)
@@ -11,13 +13,13 @@ function pendulum(u, p, t)
 end
 
 u0 = [0.99π; -1.0]
-tspan = (0.0, 21.0)
+tspan = (0.0, 30.0)
 Δt = 0.01
 prob = ODEProblem(pendulum, u0, tspan)
 sol = solve(prob, Tsit5(), dt = Δt, adaptive = false)
 
 
-X = sol[:, :] .+ 0.02*randn(2, length(ts))
+X = sol[:, :] #.+ 0.01*randn(2, length(sol.t))
 dx = 1/Δt * savitzky_golay_filter(X[1, :], 71, 3; deriv_order = 1, boundary_mode=:nearest) 
 dx2 = 1/Δt * savitzky_golay_filter(X[2, :], 71, 3; deriv_order = 1, boundary_mode=:nearest)  
 DX = transpose(hcat(dx, dx2))
@@ -37,8 +39,12 @@ fig
 
 ts = sol.t;
 
+function forcing(u, p, t)
+    return exp(-((t - 5.0) / 5.0)^2)
+end
+
 prob = ContinuousDataDrivenProblem(X, ts, DX,
-                                   U = (u, p, t) -> [exp(-((t - 5.0) / 5.0)^2)],
+                                   U = (u, p, t) -> forcing(u, p, t),
                                    p = ones(2))
 @parameters t
 @variables u(t)[1:2] c(t)[1:1]
@@ -47,7 +53,7 @@ u = collect(u)
 c = collect(c)
 w = collect(w)
 
-h = Num[sin.(w[1] .* u[1]); cos.(w[2] .* u[1]); polynomial_basis(u, 5); c]
+h = Num[sin.(w[1] .* u[1]); cos.(w[2] .* u[1]); polynomial_basis(u, 4); c]
 
 basis = Basis(h, u, parameters = w, controls = c);
 println(basis) # hide
@@ -87,10 +93,11 @@ ode_prob = ODEProblem(sys, x0, tspan, ps)
 estimate = solve(ode_prob, Tsit5(), dt=Δt, adaptive=false)
 
 
-fig = Figure(resolution=(800, 800))
-ax = Axis(fig[1, 1])
-lines!(ax, sol.t, sol[1, :])
-lines!(ax, sol.t, sol[2, :])
-lines!(ax, estimate.t, estimate[1, :], linestyle=:dash)
-lines!(ax, estimate.t, estimate[2, :], linestyle=:dash)
+fig = Figure(resolution=(800, 800), fontsize = 24, font=("CMU Serif", ))
+ax = Axis(fig[1, 1], xlabel=L"t")
+lines!(ax, sol.t, X[1, :], label=L"x")
+lines!(ax, sol.t, X[2, :], label=L"\dot{x}")
+lines!(ax, estimate.t, estimate[1, :], linestyle=:dash, label=L"x_{Sindy}")
+lines!(ax, estimate.t, estimate[2, :], linestyle=:dash, label=L"\dot{x}_{Sindy}")
+axislegend()
 fig
