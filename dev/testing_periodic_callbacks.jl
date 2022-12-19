@@ -47,13 +47,12 @@ k = 0.7                 # spring constant
 f_0 = 50.e3             # eigenfrequency cantilever
 A_free = 250.e-9        # free amplitude
 force = k * A_free/Q
-Ω = 1.015       # frequency of the amplification
+Ω = 1.015               # frequency of the amplification
 
 V_0 = 4.2e-18           # Epsilon parameter bei Ingo, ACHTUNG er nutzt nur nm Skala --> 4.2 zu 4.2e-18
 σ = 2.8e-9              # Ingo (zz)
 δx = 0.5e-9             # softening parameter
 γ = 1.e-31              # 1.e-4 in Nm nm^2 s
-#γ = 0.
 
 
 ### some usual parameters for a simulation 
@@ -61,7 +60,7 @@ p = [σ, δx, V_0, γ, 2π*f_0, Q, Ω, force/k, d, k, 0.]
 
 ### define staticarray problem
 u0 = SA[0.0, 0.0]
-tspan = (0., 100_000.)
+tspan = (0., 13_000.)
 Δt = 2π/1300
 t_period = 1/Ω * 2π/Δt
 
@@ -76,14 +75,16 @@ std_buffer = zeros(Float64, 30)
 t_min = 3 * Ω * 2π
 
 function affect!(integrator)
+    # fourier series to gain the amplitude and phase from the last period
     base = sinusoidal_bases(2, Ω, integrator.t - t_period * Δt, integrator.t)
     t_b = collect(LinRange(integrator.t - t_period*Δt, integrator.t, floor(Int, t_period)))
     θ = lsq_regression(t_b, integrator.sol[1, end-floor(Int, t_period - 1.):end], base)
     A = sqrt(θ[2]^2 + θ[3]^2)
     φ = atan(θ[3], θ[2])
-    #push!(ampl_fun, A)
+    # abspeichern der Ergebnisse 
+    push!(ampl_fun, A)
     ϕ = (integrator.t * Ω)%2π
-    #push!(phi_fun, (ϕ - φ + π)%2π - π)
+    push!(phi_fun, (ϕ - φ + π)%2π - π)
     popfirst!(std_buffer)
     push!(std_buffer, A)
     std_mean = std(std_buffer)/mean(std_buffer)    #push!(std_mean, std(std_buffer)/mean(std_buffer))
@@ -96,8 +97,7 @@ function affect!(integrator)
     #     # end
     # end
     if log.(10, std_mean) < -4.
-        push!(ampl_fun, A)
-        push!(phi_fun, (ϕ - φ + π)%2π - π)
+        # if we converge for a given input force, we increase the the input force
         integrator.p[8] += 0.2e-10
         #terminate!(integrator)
     end
