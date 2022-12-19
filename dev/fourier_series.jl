@@ -31,16 +31,19 @@ end
 
 Ω = 1.5
 x = collect(0.:0.005:2π)
-y = sin.(Ω*x .+ π/5) .+ cos.(2*Ω*x)
+y = 1/sqrt(2) .* cos.(Ω*x .+ π/6) .+  1.5 .* sin.(2*Ω * x)
 
 base = sinusoidal_bases(3, Ω, 0., 2π)
 θ = lsq_regression(x, y, base)
-ϕ_s = atan(θ[2]/θ[3])
-ϕ_c = atan(θ[4]/θ[5])
+A_s = sqrt(θ[2]^2 + θ[3]^2) 
+ϕ_s = atan(θ[3], θ[2])
+
+A_c = sqrt(θ[4]^2 + θ[5]^2) 
+ϕ_c = atan(θ[5], θ[4])
 
 fig = Figure(resolution=(800, 800))
 ax = Axis(fig[1, 1])
-lines!(ax, x, y)
-lines!(ax, x, cos.(Ω*x .- ϕ_s) .+ cos.(2*Ω*x .- ϕ_c))
+lines!(ax, x, y, linewidth=3.5)
+lines!(ax, x, A_s .* sin.(Ω*x .+ ϕ_s) .+ A_c .*sin.(2*Ω*x .+ ϕ_c) , linewidth=3.5, linestyle=:dash)
 fig
 

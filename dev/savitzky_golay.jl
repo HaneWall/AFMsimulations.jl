@@ -46,13 +46,13 @@ function savitzky_golay_filter(y::AbstractVector, window_size::Integer, polynomi
 			# first m points
 			p = C * y[1:window_size]
 			for _ in 1:deriv_order
-				p = [(i-1)*p[i] for i in 2:length(p)]
+				p = [(i-1)*p[i] for i in 2:lastindex(p)]
 			end
 			smoothed[1:m] = A[1:m, 1:size(A,2)-deriv_order]*p
 			# last m points
 			p = C * y[end-window_size+1:end]
 			for _ in 1:deriv_order
-				p = [(i-1)*p[i] for i in 2:length(p)]
+				p = [(i-1)*p[i] for i in 2:lastindex(p)]
 			end
 			smoothed[end-m+1:end] = A[m+2:end, 1:size(A,2)-deriv_order]*p
 

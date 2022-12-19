@@ -2,6 +2,7 @@ using DifferentialEquations
 using ProgressBars
 using StaticArrays
 using NLsolve
+using StaticArrays
 
 """
 Forward or backward frequency sweep with constant excitation amplitude for LJ-model.
@@ -71,27 +72,33 @@ function freq_sweep_stat(F::Float64, Ω::Array{Float64}, exp::AFM_vLJ_experiment
     ϕ = 0.
     T_sim = 6000
     tspan = (0, T_sim)
-    T_period = 2π/Δt
     p = zeros(Float64, 10)
     u_0 = SA[0.; 0.]
     ampl_container = zeros(Float64, N)
+    phi_container = zeros(Float64, N)
+    var_phi_container = zeros(Float64, N)
     Γ = F/(exp.tip.k)
     @inbounds for idx in ProgressBar(1:N)
         p = [exp.σ, exp.δx, exp.V_0, exp.γ, 2π*exp.tip.f_0, exp.tip.Q, Ω[idx], Γ, exp.d, exp.tip.k, ϕ]
+        T_period = 2π/(Δt * Ω[idx]) 
         prob = ODEProblem(f_vLJ, u_0, tspan, p)
         integrator = init(prob, AutoTsit5(Rosenbrock23()), dt=Δt, adaptive=false) 
         solve!(integrator)
         # amplitude detection algorithm (fft not necessary)
-        timeslot_to_detect_ampl = ceil(Int, 2*T_period)
-        min = abs.(minimum(integrator.sol[1, end-timeslot_to_detect_ampl:end]))
-        max = abs.(maximum(integrator.sol[1, end-timeslot_to_detect_ampl:end]))
-        ampl_container[idx] = 1/2 * (min + max)
+        T_period_int = ceil(Int, T_period)
+        base = sinusoidal_bases(2, Ω[idx], integrator.t - T_period * Δt, integrator.t)
+        t_b = collect(LinRange(integrator.t - T_period*Δt, integrator.t, T_period_int))
+        θ = lsq_regression(t_b, integrator.sol[1, end-(T_period_int-1):end], base)
+        ampl_container[idx] = sqrt(θ[2]^2 + θ[3]^2)
+        φ = atan(θ[3], θ[2]) 
+        # phase difference input and output 
+        phi_container[idx] = (ϕ - φ + π)%2π - π
         # phase conservation 
         ϕ = (ϕ + T_sim*Ω[idx])%2π
         # new u_0 is last entry of previous simulation 
         u_0 = SA[integrator.sol[1, end]; integrator.sol[2, end]]
     end
-    return ampl_container
+    return ampl_container, phi_container
 end
 
 
@@ -309,15 +316,15 @@ Amplitude sweeps for DMT-models.
 function ampl_sweep(F::Array{Float64}, Ω::Float64, exp::AFM_DMT_experiment, Δt::Float64)
     N = length(F)
     ϕ = 0.
-    T_sim = 6500
+    T_sim = 8000
     tspan = (0, T_sim)
     p = zeros(Float64, 10)
-    u_0 = [0.; 0.]
+    u_0 = SA[0.; 0.]
     ampl_container = zeros(Float64, N)
     Γ = F./(exp.tip.k)
     @inbounds for idx in ProgressBar(1:N)
         p = [exp.tip.Q, Ω, Γ[idx], exp.sample.H, exp.tip.R, exp.eff_young, exp.a_0, exp.d, exp.tip.k, ϕ]
-        prob = ODEProblem(f_DMT!, u_0, tspan, p)
+        prob = ODEProblem(f_DMT, u_0, tspan, p)
         sol = solve(prob, AutoTsit5(Rosenbrock23()), dt=Δt, adaptive=false) 
         # amplitude detection algorithm (fft not necessary)
         T_period = Ω * 2π / Δt
@@ -328,7 +335,34 @@ function ampl_sweep(F::Array{Float64}, Ω::Float64, exp::AFM_DMT_experiment, Δt
         # phase conservation 
         ϕ = (ϕ + T_sim*Ω)%2π
         # new u_0 is last entry of previous simulation 
-        u_0 = [sol[1, end]; sol[2, end]]
+        u_0 = SA[sol[1, end]; sol[2, end]]
     end
     return ampl_container
+end
+
+function ampl_sweep_dyn(F::Array{Float64}, Ω::Float64, exp::AFM_DMT_experiment, Δt::Float64)
+    N = length(F)
+    ϕ = 0.
+    T_sim = 8000
+    tspan = (0, T_sim)
+    p = zeros(Float64, 10)
+    u_0 = SA[0.; 0.]
+    ampl_container = zeros(Float64, N)
+    Γ = F./(exp.tip.k)
+    @inbounds for idx in ProgressBar(1:N)
+        p = [exp.tip.Q, Ω, Γ[idx], exp.sample.H, exp.tip.R, exp.eff_young, exp.a_0, exp.d, exp.tip.k, ϕ]
+        prob = ODEProblem(f_DMT, u_0, tspan, p)
+        sol = solve(prob, AutoTsit5(Rosenbrock23()), dt=Δt, adaptive=false) 
+        # amplitude detection algorithm (fft not necessary)
+        T_period = Ω * 2π / Δt
+        timeslot_to_detect_ampl = ceil(Int, 2*T_period)
+        min = abs.(minimum(sol[1, end-timeslot_to_detect_ampl:end]))
+        max = abs.(maximum(sol[1, end-timeslot_to_detect_ampl:end]))
+        ampl_container[idx] = 1/2 * (min + max)
+        # phase conservation 
+        ϕ = (ϕ + T_sim*Ω)%2π
+        # new u_0 is last entry of previous simulation 
+        u_0 = SA[sol[1, end]; sol[2, end]]
+    end
+    return ampl_container    
 end

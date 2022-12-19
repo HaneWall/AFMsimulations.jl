@@ -51,6 +51,21 @@ function f_DMT!(dx, x, p, t)
 end 
 
 """
+DMT model with StaticArrays.
+"""
+function f_DMT(x, p, t)
+    Q, Ω, Γ, H, R, E, a_0, d, k_c, ϕ = p
+    dx = x[2]
+    dy = -1/Q * x[2] - x[1] + Γ*sin(Ω*t + ϕ)
+    if x[1] < d - a_0
+        dy += H*R/(6*k_c * (d - x[1])^2)
+    else
+        dy += H*R/(6 * a_0^2 * k_c) - 4/3*E*sqrt(R) * 1/(k_c) * (x[1] - (d - a_0))^(3/2) 
+    end
+    SA[dx, dy]
+end 
+
+"""
 Autonomous DMT model. Respects elastic properties via Hertzian contact model. 
 """
 function f_DMT_auto!(dx, x, p, t)

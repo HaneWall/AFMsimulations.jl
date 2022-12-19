@@ -45,27 +45,6 @@ ampl_bwd = zeros(Float64, N)
 ampl_fwd .= ampl_sweep(f_fwd, Ω, AFM, Δt)
 ampl_bwd .= ampl_sweep(reverse(f_fwd), Ω, AFM, Δt)
 
-#K = 10
-#Ω_low = 1.000
-#Ω_high = 1.003
-#Ω_fwd = collect(LinRange(Ω_low, Ω_high, K))
-
-
-# ampl_fwd = zeros(Float64, K, N)
-# ampl_bwd = zeros(Float64, K, N)
-
-# @inbounds for i in 1:K
-#     ampl_fwd[i, :] .= ampl_sweep(f_fwd, Ω_fwd[i], AFM, Δt)
-#     ampl_bwd[i, :] .= ampl_sweep(reverse(f_fwd), Ω_fwd[i], AFM, Δt)
-# end
-
-
-# fig = Figure(resolution=(800, 800), fontsize=24)
-# ax = Axis3(fig[1,1], xlabel=L"Ω", ylabel=L"F_{in}", zlabel=L"A_{out}")
-# scatter!(ax, Ω_fwd, f_fwd, ampl_fwd)
-# scatter!(ax, Ω_fwd, reverse(f_fwd), ampl_bwd)
-# fig
-
 
 # figure to represent the forward and backward sweep 
 fig = Figure(resolution=(800, 400), fontsize=24)
