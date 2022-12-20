@@ -29,8 +29,8 @@ end
 
 function 
 
-function TerminatePeriodicOrbit(abstol = 1e-10, T_period = 2π, test = Poincare_pass; min_t = nothing)
-    condition = (u, t, integrator) -> test(integrator, abstol, T_period, min_t)
+function TerminatePeriodicOrbit(abstol = 1e-10, T_period = 2π; min_t = nothing)
+    condition = (u, t, integrator) -> Poincare_pass(integrator, abstol, T_period, min_t)
     affect! = (integrator) -> terminate!(integrator)
     return DiscreteCallback(condition, affect!; save_positions = (true, false))
 end
@@ -71,11 +71,6 @@ tspan = (0., 8000.)
 stat_prob = ODEProblem(f_vLJ_static, u0, tspan, p)
 T = Ω * 2π
 
-integrator = init(stat_prob, AutoTsit5(Rosenbrock23()), dt=Δt, adaptive=false)
+integrator = init(stat_prob, AutoTsit5(Rosenbrock23()), dt=Δt, adaptive=false, cb=TerminatePeriodicOrbit(abstol = 1e-10, T_period = 2π))
 
-
-
-
-condition(u,t,integrator) = t==4
-affect!(integrator) = integrator.u[1] += 10
-cb = DiscreteCallback(condition,affect!)
+solve!(integrator)

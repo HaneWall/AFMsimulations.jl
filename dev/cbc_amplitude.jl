@@ -25,19 +25,19 @@ function lsq_regression(X, y, bases)
     return θ
 end
 
-function sinusoidal_bases_1d(j, k, a, b) 
+function sinusoidal_bases_1d(j, k, Ω, a, b) 
     T = b[j] - a[j]
     bases = Function[x->1/2] 
     for i in 1 : k
-        push!(bases, x->sin(2π*i*x[j]/T))
-        push!(bases, x->cos(2π*i*x[j]/T)) 
+        push!(bases, x->sin(Ω*i*x[j]))
+        push!(bases, x->cos(Ω*i*x[j])) 
     end
     return bases 
 end
     
-function sinusoidal_bases(k, a, b) 
+function sinusoidal_bases(k, Ω, a, b) 
     n = length(a)
-    bases = [sinusoidal_bases_1d(i, k, a, b) for i in 1 : n] 
+    bases = [sinusoidal_bases_1d(i, k, Ω, a, b) for i in 1 : n] 
     terms = Function[]
     for ks in Iterators.product([0:2k for i in 1:n]...)
         powers = [div(k+1,2) for k in ks] 

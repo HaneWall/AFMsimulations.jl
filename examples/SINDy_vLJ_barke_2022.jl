@@ -1,8 +1,6 @@
 using AFMsimulations
 using CairoMakie
 using DifferentialEquations
-#using DataDrivenDiffEq 
-#using ModelingToolkit
 using LinearAlgebra
 CairoMakie.activate!(type="svg")
 # Trying to reproduce Ingo Sweep, powerpoint page 22 (LennardJones.pptx - Unibox)
@@ -71,6 +69,17 @@ lines!(ax_2, sol[1, 1:100_000], sol[2, 1:100_000], sol.t[1:100_000], linewidth=0
 axflat_2 = Axis(fig[2, 2])
 lines!(axflat_2, sol.t[1:100_000], f_ts_transient)
 fig 
+
+using DataDrivenDiffEq
+using DataDrivenSparse
+
+@parameters t
+@variables u(t)[1:2] c(t)[1]
+
+X = sol
+
+prob_dd = 
+h = 
 
 
 

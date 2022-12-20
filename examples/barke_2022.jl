@@ -36,7 +36,7 @@ N = 150         # number of omegas per forward/backward sweep
 Ω_fwd = collect(LinRange(Ω_low, Ω_high, N))
 Δt = 0.005  # timestep Δτ in integration scheme, 2π/Δt steps per period (we use dimensionless time)
 
-@profview ampl_fwd = freq_sweep_stat(force, Ω_fwd, AFM, Δt)
+ampl_fwd = freq_sweep_stat(force, Ω_fwd, AFM, Δt)
 ampl_bwd = freq_sweep_stat(force, reverse(Ω_fwd), AFM, Δt)
 
 # figure to represent the forward and backward sweep 
