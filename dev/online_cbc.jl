@@ -1,15 +1,6 @@
 using DifferentialEquations, DiffEqCallbacks, StaticArrays, Parameters
 using BenchmarkTools, LinearAlgebra, Statistics, CairoMakie, ProgressBars
 
-function f_vLJ_static(u, p, t)
-    @unpack σ, δx, V_0, γ, ω_0, Q, Ω, force, d, k, ϕ = p
-    # define some helping variables (different coordinate system)
-    h_x = (u[1] - d)^2 + (δx)^2
-    dx = u[2]
-    dy = -1/Q * u[2] - u[1] + force*sin(Ω*t + ϕ) - 12*V_0/(k * sqrt(h_x)) * ((σ^2 / h_x)^6 - (σ^2 / h_x)^3)  - u[2] * ω_0 * γ/(d - u[1])^3
-    SA[dx, dy]
-end
-
 
 """
 DMT model with StaticArrays.
@@ -28,10 +19,10 @@ end
 
 function f_DMT_control(x, p, t)
     @unpack Q, Ω, Γ, H, R, E, a_0, d, k, ϕ = p
-    @unpack ξ_nf = p  # target x
+    @unpack xᵗ = p  # target x
     @unpack k_p, k_d = p                                 # gain factors
     dx = x[2]
-    dy = -1/Q * x[2] - x[1] 
+    dy = -1/Q * x[2] - x[1] + k_p * (ξ_nf - x[1]) 
     #dy += 1/k * k_p * ( (k*Γ - x_1s)*sin(Ω*t) + (0. - x_1c)*cos(Ω*t) -)
     if x[1] < d - a_0
         dy += H*R/(6*k * (d - x[1])^2)
@@ -64,23 +55,7 @@ function update_weights!(w::AbstractArray{Float64}, b::AbstractArray{Float64}, d
     w .= w .+ μ .* inv(dot(b, b)) .* b .* ϵ_lms(data, w, b)
 end
 
-
-### Barke parameters 
-@with_kw mutable struct p_barke 
-    d :: Float64 = 100.e-9             # distance equilibrium cantilever to surface
-    Q :: Float64 = 400.                # quality factor of the spring 
-    k :: Float64 = 0.7                 # spring constant 
-    ω_0 :: Float64 = 50.e3 * 2π        # eigenfrequency cantilever
-    A_free :: Float64 = 250.e-9        # free amplitude
-    force :: Float64 = k * A_free/Q
-    Ω :: Float64 = 1.015               # frequency of the amplification
-    V_0 :: Float64 = 4.2e-18           # Epsilon parameter bei Ingo, ACHTUNG er nutzt nur nm Skala --> 4.2 zu 4.2e-18
-    σ :: Float64 = 2.8e-9              # Ingo (zz)
-    δx :: Float64 = 0.5e-9             # softening parameter
-    γ :: Float64 = 1.e-31              # 1.e-4 in Nm nm^2 s
-    ϕ :: Float64 = 0.
-end
-
+# parameters Hölscher 
 @with_kw mutable struct p_DMT
     H :: Float64 = 2.e-19
     a_0 :: Float64 = 0.3e-9
