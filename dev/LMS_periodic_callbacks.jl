@@ -27,10 +27,10 @@ function f_DMT(x, p, t)
 end 
 
 function f_DMT_control(x, p, t)
-    @unpack Q, Ω, F, H, R, E, a_0, d, k, ϕ = p
-    @unpack control, X_1s_target = p
+    @unpack Q, Ω, H, R, E, a_0, d, k, ϕ = p
+    @unpack x_target, k_p = p
     dx = x[2]
-    #dy = -1/Q * x[2] - x[1] + 1/k * F*sin(Ω*t + ϕ) + 1/k * control
+    dy = -1/Q * x[2] - x[1] + 1/k * k_p * (x_target - x[1])
     
     #dy += 1/k * k_p * ( (k*Γ - x_1s)*sin(Ω*t) + (0. - x_1c)*cos(Ω*t) -)
     if x[1] < d - a_0
@@ -150,17 +150,14 @@ end
     Ω :: Float64 = 1.
     ω_0 :: Float64 = 2π * 300000.
     R :: Float64 = 10.e-9
-    F_beg :: Float64 = 1.15e-9
-    F_end :: Float64 = 1.45e-9
-    F :: Float64 = F_beg
     N :: Int64 = 80
-    F_step = (F_end - F_beg)/N
-    X_1s_target :: Float64 = 8.3e-9
+    X_1s_target :: Float64 = 8.2e-9
     X_1c_target :: Float64 = 0
+    x_target :: Float64 = 0.
     h :: Float64 = 0.05e-9
     ϕ :: Float64 = 0.
     i :: Int64 = 0
-    k_p :: Float64 = 60.
+    k_p :: Float64 = 0.5
     control :: Float64 = 0.
 end
 
@@ -222,33 +219,34 @@ end
 function amplitude_sweep_control(p::p_DMT_control)
     ### define staticarray problem
     u0 = SA[0.0, 0.0]
-    tspan = (0., 60_000.)
+    tspan = (0., 9_000.)
     Δt = 2π/1300
     t_period = 1/p.Ω * 2π/Δt
     ampl_fun = Float64[]
-    sizehint!(ampl_fun, 80)
+    #sizehint!(ampl_fun, 80)
     phi_fun = Float64[]
     sizehint!(phi_fun, 80) 
     Γ_fun = Float64[]
     sizehint!(Γ_fun, 80)
-    ctrl = Float64[]
     std_buffer = zeros(Float64, 30)
+    control = Float64[]
+    invasive = Float64[]
+    sizehint!(control, ceil(Int64, tspan[2]/Δt))
     
     function affect!(integrator)
         integrator.p.i += 1
         A = sqrt(w[2]^2 + w[3]^2)
         φ = atan(w[3], w[2])
         ϕ = (integrator.t * integrator.p.Ω)%2π
-        Γ = sqrt((p.F + p.k_p * (p.X_1s_target - w[2]*b[2]))^2 + (p.k_p * (p.X_1c_target - w[3]*b[3]))^2)
+        Γ = integrator.p.k_p * sqrt((integrator.p.X_1s_target - w[2]*b[2])^2 + (integrator.p.X_1c_target - w[3]*b[3])^2)
         popfirst!(std_buffer)
         push!(std_buffer, A)
         std_mean = std(std_buffer)/mean(std_buffer)  
+        push!(ampl_fun, A)
         if log.(10, std_mean) < -5. && integrator.p.i > 30
             # if we converge for a given input force, we increase the the input force
             push!(phi_fun, (ϕ - φ + π)%2π - π)
-            push!(ampl_fun, A)
             push!(Γ_fun, Γ)
-            push!(ctrl, integrator.p.control)
             integrator.p.i = 0
             integrator.p.X_1s_target += integrator.p.h
         end
@@ -258,7 +256,7 @@ function amplitude_sweep_control(p::p_DMT_control)
     stat_prob_DMT = ODEProblem(f_DMT_control, u0, tspan, p) 
     integrator = init(stat_prob_DMT, callback=periodic_cb, alg=AutoTsit5(Rosenbrock23()), dt = Δt, adaptive=false, save_everystep=false)
 
-    k = 3
+    k = 5
     base = create_bases(k, integrator.p.Ω)
     w = zeros(2*k + 1)
     b = zeros(2*k + 1)
@@ -268,20 +266,21 @@ function amplitude_sweep_control(p::p_DMT_control)
     x_nf = 0.
     x_target = 0.
     for _ in ProgressBar(1:steps)
-        step!(integrator)
         update_basis!(b, base, integrator.t)
         update_weights!(w, b, integrator.u[1], Δt)
         update_nf_basis!(b_nf, b)
         update_nf_weights!(w_nf, w)
         x_nf = dot(w_nf, b_nf)
-        x_target = x_nf + (integrator.p.X_1s_target*b[2] + integrator.p.X_1c_target*b[3])
-        integrator.p.control = update_controller(integrator.p.k_p, x_target, integrator.u[1])
-        if length(ampl_fun) == integrator.p.N
-            terminate!(integrator)
-            break
-        end
+        #push!(invasive, x_nf)
+        integrator.p.x_target = x_nf + (integrator.p.X_1s_target*b[2] + integrator.p.X_1c_target*b[3])
+        #push!(control, x_target - integrator.u[1])
+        step!(integrator)
+        #if length(ampl_fun) == integrator.p.N
+        #    terminate!(integrator)
+        #    break
+        #end
     end
-    return ampl_fun, phi_fun, Γ_fun, ctrl
+    return ampl_fun, phi_fun, Γ_fun, control, invasive
 end
 
 function update_nf_basis!(b_nf::AbstractArray{Float64}, b::AbstractArray{Float64})
@@ -298,8 +297,8 @@ amplitudes_fwd, phis_fwd, forcing_fwd = amplitude_sweep_lms(p_b_fwd)
 p_b_bwd = p_DMT(F_beg=1.45e-9, F_end=1.15e-9)
 amplitudes_bwd, phis_bwd, forcing_bwd = amplitude_sweep_lms(p_b_bwd)
 
-p_ctrl = p_DMT_control(k_p = 0.01, h = 0.05e-9, X_1s_target=8.2e-9)
-amplitudes_ctrl, phis_ctrl, eff_Γ, control = amplitude_sweep_control(p_ctrl)
+p_ctrl = p_DMT_control(k_p = 3., X_1s_target=8.2e-9, h=0.03e-9)
+amplitudes_ctrl, phis_ctrl, eff_Γ, control, inve = amplitude_sweep_control(p_ctrl)
 
 CairoMakie.activate!(type="svg")
 fig = Figure(resolution = (800, 800))
