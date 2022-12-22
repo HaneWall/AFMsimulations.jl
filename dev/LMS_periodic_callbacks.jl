@@ -28,10 +28,9 @@ end
 
 function f_DMT_control(x, p, t)
     @unpack Q, Ω, H, R, E, a_0, d, k, ϕ = p
-    @unpack x_target, k_p = p
+    @unpack control = p
     dx = x[2]
-    dy = -1/Q * x[2] - x[1] + 1/k * k_p * (x_target - x[1])
-    
+    dy = -1/Q * x[2] - x[1] + 1/k * control
     #dy += 1/k * k_p * ( (k*Γ - x_1s)*sin(Ω*t) + (0. - x_1c)*cos(Ω*t) -)
     if x[1] < d - a_0
         dy += H*R/(6*k * (d - x[1])^2)
@@ -59,6 +58,15 @@ function create_bases(k, Ω)
     return bases
 end
 
+function create_dot_bases(k, Ω)
+    bases = Function[t->0]
+    for i in 1 : k
+        push!(bases, t-> -i * cos(Ω*i*t))
+        push!(bases, t-> i * sin(Ω*i*t)) 
+    end
+    return bases
+end
+
 function update_basis!(b::AbstractArray{Float64}, bases::AbstractArray{Function}, t::Float64)
     b .= [f(t) for f in bases]
 end
@@ -68,8 +76,8 @@ function update_weights!(w::AbstractArray{Float64}, b::AbstractArray{Float64}, d
     w .= w .+ μ .* inv(dot(b, b)) .* b .* ϵ_lms(data, w, b)
 end
 
-function update_controller(k_p::Float64, x_target::Float64, x::Float64)
-    return k_p * (x_target - x)
+function update_controller(k_p::Float64, k_d::Float64, x_target::Float64, x::Float64, x_target_dot::Float64, x_dot::Float64)
+    return k_p * (x_target - x) + k_d * (x_target_dot - x_dot)
 end
 
 """
@@ -153,11 +161,11 @@ end
     N :: Int64 = 80
     X_1s_target :: Float64 = 8.2e-9
     X_1c_target :: Float64 = 0
-    x_target :: Float64 = 0.
     h :: Float64 = 0.05e-9
     ϕ :: Float64 = 0.
     i :: Int64 = 0
-    k_p :: Float64 = 0.5
+    k_p :: Float64 = 60.
+    k_d :: Float64 = 40.
     control :: Float64 = 0.
 end
 
@@ -219,34 +227,34 @@ end
 function amplitude_sweep_control(p::p_DMT_control)
     ### define staticarray problem
     u0 = SA[0.0, 0.0]
-    tspan = (0., 9_000.)
+    tspan = (0., 60_000.)
     Δt = 2π/1300
     t_period = 1/p.Ω * 2π/Δt
     ampl_fun = Float64[]
-    #sizehint!(ampl_fun, 80)
+    sizehint!(ampl_fun, 80)
     phi_fun = Float64[]
     sizehint!(phi_fun, 80) 
     Γ_fun = Float64[]
     sizehint!(Γ_fun, 80)
+    ctrl = Float64[]
     std_buffer = zeros(Float64, 30)
-    control = Float64[]
-    invasive = Float64[]
-    sizehint!(control, ceil(Int64, tspan[2]/Δt))
     
     function affect!(integrator)
         integrator.p.i += 1
         A = sqrt(w[2]^2 + w[3]^2)
         φ = atan(w[3], w[2])
         ϕ = (integrator.t * integrator.p.Ω)%2π
-        Γ = integrator.p.k_p * sqrt((integrator.p.X_1s_target - w[2]*b[2])^2 + (integrator.p.X_1c_target - w[3]*b[3])^2)
+        Γ = sqrt((p.k_p * (p.X_1s_target - w[2]*b[2]) - integrator.p.k_d*(p.X_1c_target - w[3]*b[3]))^2 + 
+                 (p.k_p * (p.X_1c_target - w[3]*b[3]) + integrator.p.k_d*(p.X_1s_target - w[2]*b[2]))^2)
         popfirst!(std_buffer)
         push!(std_buffer, A)
         std_mean = std(std_buffer)/mean(std_buffer)  
-        push!(ampl_fun, A)
         if log.(10, std_mean) < -5. && integrator.p.i > 30
             # if we converge for a given input force, we increase the the input force
             push!(phi_fun, (ϕ - φ + π)%2π - π)
+            push!(ampl_fun, A)
             push!(Γ_fun, Γ)
+            push!(ctrl, integrator.p.control)
             integrator.p.i = 0
             integrator.p.X_1s_target += integrator.p.h
         end
@@ -258,29 +266,35 @@ function amplitude_sweep_control(p::p_DMT_control)
 
     k = 5
     base = create_bases(k, integrator.p.Ω)
+    base_dot = create_dot_bases(k, integrator.p.Ω)
     w = zeros(2*k + 1)
     b = zeros(2*k + 1)
+    b_d = zeros(2*k + 1)
     w_nf = zeros(2*k + 1 - 2)   # weights without fundamental
     b_nf = zeros(2*k + 1 - 2)   # basis without fundamental
+    b_d_nf = zeros(2*k + 1 - 2)
     steps = floor(Int64, tspan[2]/Δt)
     x_nf = 0.
     x_target = 0.
+    x_target_dot = 0.
     for _ in ProgressBar(1:steps)
+        step!(integrator)
         update_basis!(b, base, integrator.t)
+        update_basis!(b_d, base_dot, integrator.t)
         update_weights!(w, b, integrator.u[1], Δt)
         update_nf_basis!(b_nf, b)
+        update_nf_basis!(b_d_nf, b_d)
         update_nf_weights!(w_nf, w)
         x_nf = dot(w_nf, b_nf)
-        #push!(invasive, x_nf)
-        integrator.p.x_target = x_nf + (integrator.p.X_1s_target*b[2] + integrator.p.X_1c_target*b[3])
-        #push!(control, x_target - integrator.u[1])
-        step!(integrator)
-        #if length(ampl_fun) == integrator.p.N
-        #    terminate!(integrator)
-        #    break
-        #end
+        x_target = x_nf + (integrator.p.X_1s_target*b[2] + integrator.p.X_1c_target*b[3])
+        x_target_dot = integrator.p.Ω .* (integrator.p.X_1s_target*b_d[2] + integrator.p.X_1c_target*b_d[3]) + integrator.p.Ω * (dot(b_d_nf, w_nf))
+        integrator.p.control = update_controller(integrator.p.k_p, integrator.p.k_d, x_target, integrator.u[1], x_target_dot, integrator.u[2])
+        if length(ampl_fun) == integrator.p.N
+            terminate!(integrator)
+            break
+        end
     end
-    return ampl_fun, phi_fun, Γ_fun, control, invasive
+    return ampl_fun, phi_fun, Γ_fun
 end
 
 function update_nf_basis!(b_nf::AbstractArray{Float64}, b::AbstractArray{Float64})
@@ -291,14 +305,14 @@ function update_nf_weights!(w_nf::AbstractArray{Float64}, w::AbstractArray{Float
     w_nf .= [w[i] for i in eachindex(w) if i ∉ [2, 3]]
 end 
 
-p_b_fwd = p_DMT()
-amplitudes_fwd, phis_fwd, forcing_fwd = amplitude_sweep_lms(p_b_fwd)
+# p_b_fwd = p_DMT()
+# amplitudes_fwd, phis_fwd, forcing_fwd = amplitude_sweep_lms(p_b_fwd)
 
-p_b_bwd = p_DMT(F_beg=1.45e-9, F_end=1.15e-9)
-amplitudes_bwd, phis_bwd, forcing_bwd = amplitude_sweep_lms(p_b_bwd)
+# p_b_bwd = p_DMT(F_beg=1.45e-9, F_end=1.15e-9)
+# amplitudes_bwd, phis_bwd, forcing_bwd = amplitude_sweep_lms(p_b_bwd)
 
-p_ctrl = p_DMT_control(k_p = 3., X_1s_target=8.2e-9, h=0.03e-9)
-amplitudes_ctrl, phis_ctrl, eff_Γ, control, inve = amplitude_sweep_control(p_ctrl)
+p_ctrl = p_DMT_control(k_p = 10., k_d = 30., h = 0.05e-9, X_1s_target=8.2e-9)
+amplitudes_ctrl, phis_ctrl, eff_Γ = amplitude_sweep_control(p_ctrl)
 
 CairoMakie.activate!(type="svg")
 fig = Figure(resolution = (800, 800))
