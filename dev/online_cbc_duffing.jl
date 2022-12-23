@@ -106,10 +106,6 @@ function f_duffing(u, p, t)
     return SA[dx, dy]
 end
 
-function d_controller(k_d::Float64, x_dot_target::Float64, x_dot::Float64)
-    return k_d * (x_dot_target - x_dot)
-end
-
 function cbc_sweep(p::p_abel_1)
     u0 = SA[0. ; 0.]
     Δt = 0.005
@@ -148,7 +144,7 @@ function cbc_sweep(p::p_abel_1)
 
     periodic_cb = PeriodicCallback(affect!, t_period*Δt, initial_affect=false)
     prob = ODEProblem(f_duffing, u0, tspan, p) 
-    integrator = init(prob, callback=periodic_cb, alg=AutoTsit5(Rosenbrock23()), dt = Δt, adaptive=false)
+    integrator = init(prob, callback=periodic_cb, alg=AutoTsit5(Rosenbrock23()), dt = Δt, adaptive=false, save_everystep=false)
 
     k = 5
     base = create_bases(k, integrator.p.Ω)
@@ -170,10 +166,7 @@ function cbc_sweep(p::p_abel_1)
         update_basis!(b, base, integrator.t)
         update_basis!(b_d, base_dot, integrator.t)
         update_weights!(w, b, integrator.u[1], μ)
-        x_rec = x_rec = dot(w, b)
-        x_rec_dot =  dot(w, b_d)
-        #push!(p.x_rec, x_rec)
-        #push!(p.x_rec_dot, x_rec_dot)
+
         update_nf_basis!(b_nf, b)
         update_nf_basis!(b_d_nf, b_d)
         update_nf_weights!(w_nf, w)
@@ -184,9 +177,9 @@ function cbc_sweep(p::p_abel_1)
         popfirst!(Γ_buffer)
         push!(t_buffer, integrator.t)
         push!(Γ_buffer, integrator.p.control)
-        push!(p.control_buff, integrator.p.control)
+        #push!(p.control_buff, integrator.p.control)
         step!(integrator)
-        if length(response_amplitude)>1 && response_amplitude[end] >= 5.
+        if length(response_amplitude)>1 && eff_forcing_amplitude[end] >= 31.
             terminate!(integrator)
             break
         end
@@ -194,11 +187,42 @@ function cbc_sweep(p::p_abel_1)
     return response_amplitude, response_phase, eff_forcing_amplitude, integrator.sol
 end
 
+omegas = [2. + i*0.25 for i in 1:1:8]
+paras = [p_abel_1(X_1s_target=1., h=0.05, k_d=30.1, k_p=22.6, Ω=omegas[i]) for i in 1:8] 
 
-para = p_abel_1(X_1s_target=1., h=0.05, k_d=30.1, k_p=22.6, Ω=4.) 
-R, φ_R, Γ, sol = cbc_sweep(para)
+#R_1, φ_R_1, Γ_1, sol_1 = cbc_sweep(paras[1])
+R_2, φ_R_2, Γ_2 = cbc_sweep(paras[1])
+R_3, φ_R_3, Γ_3 = cbc_sweep(paras[2])
+R_4, φ_R_4, Γ_4 = cbc_sweep(paras[3])
+R_5, φ_R_5, Γ_5 = cbc_sweep(paras[4])
+R_6, φ_R_6, Γ_6 = cbc_sweep(paras[5])
+R_7, φ_R_7, Γ_7 = cbc_sweep(paras[6])
+R_8, φ_R_8, Γ_8 = cbc_sweep(paras[7])
+R_9, φ_R_9, Γ_9 = cbc_sweep(paras[8])
+
+CairoMakie.activate!(type="svg")
+fig = Figure(resolution=(800, 800))
+ax1 = Axis3(fig[1,1], azimuth=7.3*π/4, perspectiveness=0.)
+#scatterlines!(ax1, Γ_1, R_1)
+scatterlines!(ax1, 2.25 .* ones(length(R_2)), Γ_2, R_2)
+scatterlines!(ax1, 2.5 .* ones(length(R_3)), Γ_3, R_3)
+scatterlines!(ax1, 2.75 .* ones(length(R_4)), Γ_4, R_4)
+scatterlines!(ax1, 3. .* ones(length(R_5)), Γ_5, R_5)
+scatterlines!(ax1, 3.25 .* ones(length(R_6)), Γ_6, R_6)
+scatterlines!(ax1, 3.5 .* ones(length(R_7)), Γ_7, R_7)
+scatterlines!(ax1, 3.75 .* ones(length(R_8)), Γ_8, R_8)
+scatterlines!(ax1, 4. .* ones(length(R_9)), Γ_9, R_9)
+fig
 
 
+# using GaussianProcesses
+# using Plots
+# ws = [2.5 .* ones(length(R_2)); 3. .* ones(length(R_3)); 3.5 .* ones(length(R_4)); 4. .* ones(length(R_5))]  
+# Gs = [Γ_2; Γ_3; Γ_4; Γ_5]
+# Rs = [R_2; R_3; R_4; R_5]
+# Xs = transpose(hcat(Gs, ws))
+# gp2 = GP(Xs,Rs, MeanZero(), SE(0., 0.))
+# Plots.surface(gp2)
 
 ## testing dot base 
 
@@ -221,7 +245,7 @@ w = zeros(2*k + 1)
 for (idx, t) in enumerate(x)
     update_basis!(b, base, t)
     update_basis!(b_d, base_dot, t)
-    update_weights!(w, b, y[idx], 2*0.005)
+    update_weights!(w, b, y[idx], 0.005)
     y_reconst[idx] = dot(w, b)
     y_prime[idx] = dot(w, b_d)
 end
