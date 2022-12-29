@@ -2,8 +2,7 @@ using DifferentialEquations, DiffEqCallbacks, StaticArrays, Parameters
 using BenchmarkTools, LinearAlgebra, Statistics, CairoMakie, ProgressBars
  
 """
-This code should be able to reconstruct some results from alrdy 
-published cbc-experiments. 
+This code should be able to reconstruct the results from Abeloos et. al. 
 """
 @with_kw mutable struct p_duffing_no_control_ampl_sweep
     k_1 :: Float64 = 1.
@@ -415,27 +414,17 @@ Rs = [R_2; R_3; R_4; R_5; R_6; R_7; R_8; R_9; R_10; R_11]
 φs = [φ_R_2; φ_R_3; φ_R_4; φ_R_5; φ_R_6; φ_R_7; φ_R_8; φ_R_9; φ_R_10; φ_R_11] 
 Xs = transpose(hcat(Rs, ws))
 Xs_phi = transpose(hcat(φs, ws))
-gp2 = GP(Xs,Gs, MeanZero(), SE(0., 0.))
-gpphi = GP(Xs_phi, Gs, MeanZero(), SE(0., 0.)) 
+gp2 = GP(Xs,Gs, MeanZero(), SE(-0.8, 0.))
+#gpphi = GP(Xs_phi, Gs, MeanZero(), SE(-1.2, 0.)) 
 
 xmin, xmax =  (minimum(gp2.x[1,:]), maximum(gp2.x[1,:]))
 ymin, ymax = (minimum(gp2.x[2,:]), maximum(gp2.x[2,:]))
-x = range(xmin, stop=xmax, length=120)
-y = range(ymin, stop=ymax, length=120)
-xgrid = repeat(x', 120, 1)
-ygrid = repeat(y, 1, 120)
+x = range(xmin, stop=xmax, length=200)
+y = range(ymin, stop=ymax, length=200)
+xgrid = repeat(x', 200, 1)
+ygrid = repeat(y, 1, 200)
 μ, Σ = predict_f(gp2,[vec(xgrid)'; vec(ygrid)'])
-zgrid = reshape(μ, 120, 120)
-
-
-xmin_phi, xmax_phi =  (minimum(gpphi.x[1,:]), maximum(gpphi.x[1,:]))
-ymin_phi, ymax_phi = (minimum(gpphi.x[2,:]), maximum(gpphi.x[2,:]))
-x_phi = range(xmin_phi, stop=xmax_phi, length=120)
-y_phi = range(ymin_phi, stop=ymax_phi, length=120)
-xgrid_phi = repeat(x_phi', 120, 1)
-ygrid_phi = repeat(y_phi, 1, 120)
-μ_phi, Σ_phi = predict_f(gpphi,[vec(xgrid_phi)'; vec(ygrid_phi)'])
-zgrid_phi = reshape(μ_phi, 120, 120)
+zgrid = reshape(μ, 200, 200)
 
 using GLMakie
 GLMakie.activate!()
