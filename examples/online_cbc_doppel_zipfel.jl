@@ -483,6 +483,13 @@ Colorbar(fig_heat[1, 2][1, 1], heater, ticks=1.:0.2:2., vertical=true)
 Label(fig_heat[1, 2][1, 2], L"\Gamma", tellheight=false, rotation=π/2)
 fig_heat
 
+GLMakie.activate!()
+fig_trans = Figure(resolution = (800, 800)) 
+ax_trans = Axis3(fig_trans[1, 1])
+surface!(ax_trans, xgrid, zgrid, ygrid, colormap=[:gray, :gray], transparency=true, shading=true)
+ylims!(ax_trans, (0, 10.))
+xlims!(ax_trans, (0., 3.5))
+fig_trans
 
 
 
