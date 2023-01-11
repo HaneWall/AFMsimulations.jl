@@ -242,7 +242,7 @@ end
 function cbc_sweep(p::p_abel_1)
     u0 = SA[0. ; 0.]
     Δt = 0.005
-    tspan = (0., 25_000.)
+    tspan = (0., 35_000.)
     t_period = 1/p.Ω * 2π/Δt
     response_amplitude = Float64[]
     response_phase = Float64[]
@@ -323,7 +323,7 @@ function cbc_sweep(p::p_abel_1)
         push!(t_buffer, integrator.t)
         push!(Γ_buffer, integrator.p.control)
         step!(integrator)
-        if length(response_amplitude)>1 && eff_forcing_amplitude[end] >= 31.
+        if length(response_amplitude)>1 && response_amplitude[end] >= 5.
             terminate!(integrator)
             break
         end
@@ -416,7 +416,7 @@ Xs = transpose(hcat(Rs, ws))
 Xs_phi = transpose(hcat(φs, ws))
 gp2 = GP(Xs,Gs, MeanZero(), SE(-0.8, 0.))
 #gpphi = GP(Xs_phi, Gs, MeanZero(), SE(-1.2, 0.)) 
-
+#optimize!(gp2)
 xmin, xmax =  (minimum(gp2.x[1,:]), maximum(gp2.x[1,:]))
 ymin, ymax = (minimum(gp2.x[2,:]), maximum(gp2.x[2,:]))
 x = range(xmin, stop=xmax, length=200)
@@ -469,6 +469,33 @@ axislegend(position=:lt)
 Colorbar(fig_heat[1, 2][1, 1], heater, ticks=3:1.5:15, vertical=true)
 Label(fig_heat[1, 2][1, 2], L"\Gamma", tellheight=false, rotation=π/2)
 fig_heat
+
+# surface to make cusp catastrophe more visible
+GLMakie.activate!()
+# CairoMakie.activate!(type="png")
+# fig_cusp.scene = parent_scene
+fig = Figure(resolution = (800, 800), fontsize = 28, fonts = (; regular = "CMU Serif"))
+ax = Axis3(fig[1, 1], xlabel= L"\omega", ylabel=L"\Gamma", zlabel=L"R")
+surface!(ax, ygrid, zgrid, xgrid, colormap=[:moccasin, :moccasin], transparency=true, shading=true)
+scatterlines!(ax, 1.75 .* ones(length(R_2)), Γ_2, R_2, color=:black)
+scatterlines!(ax, 2. .* ones(length(R_3)), Γ_3, R_3, color=:black)
+scatterlines!(ax, 2.25 .* ones(length(R_4)), Γ_4, R_4, color=:black)
+scatterlines!(ax, 2.5 .* ones(length(R_5)), Γ_5, R_5, color=:black)
+scatterlines!(ax,  2.75 .* ones(length(R_6)), Γ_6, R_6, color=:black)
+scatterlines!(ax,  3. .* ones(length(R_7)), Γ_7, R_7, color=:black)
+scatterlines!(ax, 3.25 .* ones(length(R_8)), Γ_8, R_8, color=:black)
+scatterlines!(ax,  3.5 .* ones(length(R_9)), Γ_9, R_9, color=:black)
+scatterlines!(ax, 3.75 .* ones(length(R_10)), Γ_10, R_10, color=:black)
+scatterlines!(ax,  4. .* ones(length(R_11)), Γ_11, R_11, color=:black)
+zlims!(ax, (0. , 4.5))
+#Makie.rotate!(pl, Vec3f(0, 1, 0), π/2)
+fig
+
+
+GLMakie.activate!()
+scene = Scene(backgroundcolor=:gray)
+subwindow = Scene(scene, px_area=Rect(100, 100, 200, 200), clear=true, backgroundcolor=:white)
+scene
 
 
 GLMakie.activate!()
