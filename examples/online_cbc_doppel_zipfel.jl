@@ -419,7 +419,7 @@ Rs = [R_2; R_3; R_4; R_5; R_6; R_7; R_8; R_9; R_10; R_11; R_12; R_13; R_14; R_15
 
 Xs = transpose(hcat(Rs, ws))
 Xs_phi = transpose(hcat(φs, ws))
-gp2 = GP(Xs,Gs, MeanZero(), SE(-2.8, 0.))
+gp2 = GP(Xs,Gs, MeanZero(), SE(-2.9, 0.))
 gpphi = GP(Xs_phi, Gs, MeanZero(), SE(0., 0.)) 
 
 xmin, xmax =  (minimum(gp2.x[1,:]), maximum(gp2.x[1,:]))
@@ -483,15 +483,79 @@ Colorbar(fig_heat[1, 2][1, 1], heater, ticks=1.:0.2:2., vertical=true)
 Label(fig_heat[1, 2][1, 2], L"\Gamma", tellheight=false, rotation=π/2)
 fig_heat
 
+#CairoMakie.activate!(type="svg")
 GLMakie.activate!()
-fig_trans = Figure(resolution = (800, 800)) 
-ax_trans = Axis3(fig_trans[1, 1])
-surface!(ax_trans, xgrid, zgrid, ygrid, colormap=[:gray, :gray], transparency=true, shading=true)
-ylims!(ax_trans, (0, 10.))
-xlims!(ax_trans, (0., 3.5))
-fig_trans
+fig = Figure(resolution = (800, 800), fontsize = 28, fonts = (; regular = "CMU Serif"))
+ax = Axis3(fig[1, 1], xlabel= L"\omega", ylabel=L"\Gamma", zlabel=L"R", azimuth = -π/2, elevation = π/2)
+xgrid_copy = copy(xgrid)
+xgrid_copy[xgrid_copy.>3.5] .= NaN
+zgrid_copy = copy(zgrid)
+zgrid_copy[zgrid_copy.>13.] .= NaN
 
+Γ_2_copy = copy(Γ_2)
+Γ_3_copy = copy(Γ_3)
+Γ_4_copy = copy(Γ_4)
+Γ_5_copy = copy(Γ_5)
+Γ_6_copy = copy(Γ_6)
+Γ_7_copy = copy(Γ_7)
+Γ_8_copy = copy(Γ_8)
+Γ_9_copy = copy(Γ_9)
+Γ_10_copy = copy(Γ_10)
+Γ_11_copy = copy(Γ_11)
+Γ_12_copy = copy(Γ_12)
+Γ_13_copy = copy(Γ_13)
+Γ_14_copy = copy(Γ_14)
+Γ_15_copy = copy(Γ_15)
+Γ_16_copy = copy(Γ_16)
+Γ_17_copy = copy(Γ_17)
+Γ_18_copy = copy(Γ_18)
+Γ_19_copy = copy(Γ_19)
+Γ_20_copy = copy(Γ_20)
+Γ_21_copy = copy(Γ_21)
 
+Γ_2_copy[Γ_2_copy.> 13] .= NaN
+Γ_3_copy[Γ_3_copy.> 13] .= NaN
+Γ_4_copy[Γ_4_copy.> 13] .= NaN
+Γ_5_copy[Γ_5_copy.> 13] .= NaN
+Γ_6_copy[Γ_6_copy.> 13] .= NaN
+Γ_7_copy[Γ_7_copy.> 13] .= NaN
+Γ_8_copy[Γ_8_copy.> 13] .= NaN
+Γ_9_copy[Γ_9_copy.> 13] .= NaN
+Γ_10_copy[Γ_10_copy.> 13] .= NaN
+Γ_11_copy[Γ_11_copy.> 13] .= NaN
+Γ_12_copy[Γ_12_copy.> 13] .= NaN
+Γ_13_copy[Γ_13_copy.> 13] .= NaN
+Γ_14_copy[Γ_14_copy.> 13] .= NaN
+Γ_15_copy[Γ_15_copy.> 13] .= NaN
+Γ_16_copy[Γ_16_copy.> 13] .= NaN
+Γ_17_copy[Γ_17_copy.> 13] .= NaN
+Γ_18_copy[Γ_18_copy.> 13] .= NaN
+Γ_19_copy[Γ_19_copy.> 13] .= NaN
+Γ_20_copy[Γ_20_copy.> 13] .= NaN
+Γ_21_copy[Γ_21_copy.> 13] .= NaN
+
+surface!(ax, ygrid, zgrid_copy, xgrid_copy, colormap=[:moccasin, :moccasin], transparency=true, shading=true)
+scatterlines!(ax, omegas[1] .* ones(length(R_2)), Γ_2_copy, R_2, color=:black)
+scatterlines!(ax, omegas[2] .* ones(length(R_3)), Γ_3_copy, R_3, color=:black)
+scatterlines!(ax, omegas[3] .* ones(length(R_4)), Γ_4_copy, R_4, color=:black)
+scatterlines!(ax, omegas[4] .* ones(length(R_5)), Γ_5_copy, R_5, color=:black)
+scatterlines!(ax, omegas[5] .* ones(length(R_6)), Γ_6_copy, R_6, color=:black)
+scatterlines!(ax, omegas[6] .* ones(length(R_7)), Γ_7_copy, R_7, color=:black)
+scatterlines!(ax, omegas[7] .* ones(length(R_8)), Γ_8_copy, R_8, color=:black)
+scatterlines!(ax, omegas[8] .* ones(length(R_9)), Γ_9_copy, R_9, color=:black)
+scatterlines!(ax, omegas[9] .* ones(length(R_10)), Γ_10_copy, R_10, color=:black)
+scatterlines!(ax, omegas[10] .* ones(length(R_11)), Γ_11_copy, R_11, color=:black)
+scatterlines!(ax, omegas[11] .* ones(length(R_12)), Γ_12_copy, R_12, color=:black)
+scatterlines!(ax, omegas[12] .* ones(length(R_13)), Γ_13_copy, R_13, color=:black)
+scatterlines!(ax, omegas[13] .* ones(length(R_14)), Γ_14_copy, R_14, color=:black)
+scatterlines!(ax, omegas[14] .* ones(length(R_15)), Γ_15_copy, R_15, color=:black)
+scatterlines!(ax, omegas[15] .* ones(length(R_16)), Γ_16_copy, R_16, color=:black)
+scatterlines!(ax, omegas[16] .* ones(length(R_17)), Γ_17_copy, R_17, color=:black)
+scatterlines!(ax, omegas[17] .* ones(length(R_18)), Γ_18_copy, R_18, color=:black)
+scatterlines!(ax, omegas[18] .* ones(length(R_19)), Γ_19_copy, R_19, color=:black)
+scatterlines!(ax, omegas[19] .* ones(length(R_20)), Γ_20_copy, R_20, color=:black)
+scatterlines!(ax, omegas[20] .* ones(length(R_21)), Γ_21_copy, R_21, color=:black)
+fig
 
 ## experiments with otf fourier
 # Ω = 7.3

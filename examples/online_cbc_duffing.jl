@@ -242,7 +242,7 @@ end
 function cbc_sweep(p::p_abel_1)
     u0 = SA[0. ; 0.]
     Δt = 0.005
-    tspan = (0., 35_000.)
+    tspan = (0., 40_000.)
     t_period = 1/p.Ω * 2π/Δt
     response_amplitude = Float64[]
     response_phase = Float64[]
@@ -414,7 +414,7 @@ Rs = [R_2; R_3; R_4; R_5; R_6; R_7; R_8; R_9; R_10; R_11]
 φs = [φ_R_2; φ_R_3; φ_R_4; φ_R_5; φ_R_6; φ_R_7; φ_R_8; φ_R_9; φ_R_10; φ_R_11] 
 Xs = transpose(hcat(Rs, ws))
 Xs_phi = transpose(hcat(φs, ws))
-gp2 = GP(Xs,Gs, MeanZero(), SE(-0.8, 0.))
+gp2 = GP(Xs,Gs, MeanZero(), SE(-0.7, 0.))
 #gpphi = GP(Xs_phi, Gs, MeanZero(), SE(-1.2, 0.)) 
 #optimize!(gp2)
 xmin, xmax =  (minimum(gp2.x[1,:]), maximum(gp2.x[1,:]))
@@ -433,7 +433,7 @@ lvls = @lift(range(0., $z_index, step=$z_index))
 fig = Figure(resolution=(1400, 700), fontsize=24, fonts = (; regular = "CMU Serif"))
 #ax = Axis3(fig[1, 1], azimuth = 0., elevation=-π/2) 
 ax = Axis3(fig[1, 1], xlabel=L"R", ylabel=L"\omega", zlabel=L"\Gamma")
-CairoMakie.surface!(ax, xgrid, ygrid, zgrid, colormap=:Spectral_11, shading=false)
+CairoMakie.surface!(ax, xgrid, ygrid, zgrid, colormap=[:moccasin, :moccasin])
 scatterlines!(ax, R_2, 1.75 .* ones(length(R_2)), Γ_2, color=:black)
 scatterlines!(ax, R_3, 2. .* ones(length(R_3)), Γ_3, color=:black)
 scatterlines!(ax, R_4, 2.25 .* ones(length(R_4)), Γ_4, color=:black)
@@ -474,21 +474,51 @@ fig_heat
 GLMakie.activate!()
 # CairoMakie.activate!(type="png")
 # fig_cusp.scene = parent_scene
+
+
+
+#CairoMakie.activate!(type="svg")
+GLMakie.activate!()
 fig = Figure(resolution = (800, 800), fontsize = 28, fonts = (; regular = "CMU Serif"))
-ax = Axis3(fig[1, 1], xlabel= L"\omega", ylabel=L"\Gamma", zlabel=L"R")
-surface!(ax, ygrid, zgrid, xgrid, colormap=[:moccasin, :moccasin], transparency=true, shading=true)
-scatterlines!(ax, 1.75 .* ones(length(R_2)), Γ_2, R_2, color=:black)
-scatterlines!(ax, 2. .* ones(length(R_3)), Γ_3, R_3, color=:black)
-scatterlines!(ax, 2.25 .* ones(length(R_4)), Γ_4, R_4, color=:black)
-scatterlines!(ax, 2.5 .* ones(length(R_5)), Γ_5, R_5, color=:black)
-scatterlines!(ax,  2.75 .* ones(length(R_6)), Γ_6, R_6, color=:black)
-scatterlines!(ax,  3. .* ones(length(R_7)), Γ_7, R_7, color=:black)
-scatterlines!(ax, 3.25 .* ones(length(R_8)), Γ_8, R_8, color=:black)
-scatterlines!(ax,  3.5 .* ones(length(R_9)), Γ_9, R_9, color=:black)
-scatterlines!(ax, 3.75 .* ones(length(R_10)), Γ_10, R_10, color=:black)
-scatterlines!(ax,  4. .* ones(length(R_11)), Γ_11, R_11, color=:black)
-zlims!(ax, (0. , 4.5))
-#Makie.rotate!(pl, Vec3f(0, 1, 0), π/2)
+ax = Axis3(fig[1, 1], xlabel= L"\omega", ylabel=L"\Gamma", zlabel=L"R", azimuth = -π/2, elevation = π/2, limits=(1.75, 4., 0., 30, 0., 5.))
+xgrid_copy = copy(xgrid)
+xgrid_copy[xgrid_copy.>4.9] .= NaN
+zgrid_copy = copy(zgrid)
+zgrid_copy[zgrid_copy.>30.] .= NaN
+
+Γ_2_copy = copy(Γ_2)
+Γ_3_copy = copy(Γ_3)
+Γ_4_copy = copy(Γ_4)
+Γ_5_copy = copy(Γ_5)
+Γ_6_copy = copy(Γ_6)
+Γ_7_copy = copy(Γ_7)
+Γ_8_copy = copy(Γ_8)
+Γ_9_copy = copy(Γ_9)
+Γ_10_copy = copy(Γ_10)
+Γ_11_copy = copy(Γ_11)
+
+Γ_2_copy[Γ_2_copy.> 30] .= NaN
+Γ_3_copy[Γ_3_copy.> 30] .= NaN
+Γ_4_copy[Γ_4_copy.> 30] .= NaN
+Γ_5_copy[Γ_5_copy.> 30] .= NaN
+Γ_6_copy[Γ_6_copy.> 30] .= NaN
+Γ_7_copy[Γ_7_copy.> 30] .= NaN
+Γ_8_copy[Γ_8_copy.> 30] .= NaN
+Γ_9_copy[Γ_9_copy.> 30] .= NaN
+Γ_10_copy[Γ_10_copy.> 30] .= NaN
+Γ_11_copy[Γ_11_copy.> 30] .= NaN
+
+surface!(ax, ygrid, zgrid_copy, xgrid_copy, colormap=[:moccasin, :moccasin], transparency=true, shading=true)
+scatterlines!(ax, 1.75 .* ones(length(R_2)), Γ_2_copy, R_2, color=:black)
+scatterlines!(ax, 2. .* ones(length(R_3)), Γ_3_copy, R_3, color=:black)
+scatterlines!(ax, 2.25 .* ones(length(R_4)), Γ_4_copy, R_4, color=:black)
+scatterlines!(ax, 2.5 .* ones(length(R_5)), Γ_5_copy, R_5, color=:black)
+scatterlines!(ax,  2.75 .* ones(length(R_6)), Γ_6_copy, R_6, color=:black)
+scatterlines!(ax,  3. .* ones(length(R_7)), Γ_7_copy, R_7, color=:black)
+scatterlines!(ax, 3.25 .* ones(length(R_8)), Γ_8_copy, R_8, color=:black)
+scatterlines!(ax,  3.5 .* ones(length(R_9)), Γ_9_copy, R_9, color=:black)
+scatterlines!(ax, 3.75 .* ones(length(R_10)), Γ_10_copy, R_10, color=:black)
+scatterlines!(ax,  4. .* ones(length(R_11)), Γ_11_copy, R_11, color=:black)
 fig
 
 
